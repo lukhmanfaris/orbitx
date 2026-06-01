@@ -1,0 +1,131 @@
+{
+  "companies": [
+    {
+      "id": "co-1779757716109",
+      "name": "MYDATASSM",
+      "logoText": "MA",
+      "accentColor": "indigo",
+      "description": "",
+      "logoUrl": ""
+    }
+  ],
+  "users": [
+    {
+      "id": "u-mpu1tgm8",
+      "username": "Lukhman Faris",
+      "role": "Team Lead",
+      "accessCode": "MA0014"
+    }
+  ],
+  "assets": [
+    {
+      "id": "a-mpu22bv2",
+      "postingFolderId": "p-mpu2208c",
+      "s3FileUrl": "/uploads/upload_1780248621694_3.290526_mydata_festives___social_media_posting.jpg",
+      "fileType": "image/jpeg",
+      "captionText": "this is a test",
+      "artworkComment": "kurang color",
+      "revisedCaption": "test 2",
+      "scheduledDate": "2026-06-01",
+      "status": "Drafting",
+      "uploadedBy": "u-mpu1tgm8",
+      "uploadedByName": "Lukhman Faris",
+      "createdAt": "2026-05-31T17:30:21.710Z",
+      "updatedAt": "2026-05-31T17:30:31.467Z"
+    },
+    {
+      "id": "a-mptdd2nh",
+      "postingFolderId": "p-mptbf8v2",
+      "s3FileUrl": "/uploads/upload_1780207132575_290526_mydata_festives___social_media_posting.jpg",
+      "fileType": "image/jpeg",
+      "captionText": "asasjkajsajshajhsjahasas",
+      "artworkComment": "",
+      "revisedCaption": "askajskajksjaasjhajshasasasas",
+      "scheduledDate": "2026-05-31",
+      "status": "Drafting",
+      "uploadedBy": "u-mplxrsqc",
+      "uploadedByName": "Lukhman Faris",
+      "createdAt": "2026-05-31T05:58:52.589Z",
+      "updatedAt": "2026-05-31T05:58:52.589Z"
+    },
+    {
+      "id": "a-mptbfeje",
+      "postingFolderId": "p-mptbf8v2",
+      "s3FileUrl": "/uploads/upload_1780203882051_290526_mydata_festives___social_media_posting__1_.jpg",
+      "fileType": "image/jpeg",
+      "captionText": "asasjkajsajshajhsjahasas",
+      "artworkComment": "asaksjkajksjaaksjkajskajsasajshjahasasasas",
+      "revisedCaption": "askajskajksjaasjhajshasasasas",
+      "scheduledDate": "2026-05-31",
+      "status": "Drafting",
+      "uploadedBy": "u-mplxrsqc",
+      "uploadedByName": "Lukhman Faris",
+      "createdAt": "2026-05-31T05:04:42.074Z",
+      "updatedAt": "2026-05-31T05:29:38.454Z"
+    }
+  ],
+  "articles": [
+    {
+      "id": "art-mpuz8hhu",
+      "articleFolderId": "af-mpov4qff",
+      "title": "asasasasas",
+      "body": "asasasasasas\n\nasalsklakslkas\nakskajskajksjas",
+      "preparedBy": "Lukhman Faris",
+      "createdAt": "2026-06-01",
+      "coverImage": "/uploads/upload_1780304332292_whatsapp_image_2026_05_26_at_11.30.26.jpeg"
+    }
+  ],
+  "postingFolders": [
+    {
+      "id": "p-mptbf8v2",
+      "campaignId": "c-mpta00vs",
+      "name": "Check Dulu",
+      "description": "",
+      "createdAt": "2026-05-31T05:04:34.718Z",
+      "projectType": "both"
+    },
+    {
+      "id": "p-mpu2208c",
+      "campaignId": "c-mpu216w2",
+      "name": "hags",
+      "description": "",
+      "createdAt": "2026-05-31T17:30:06.636Z",
+      "projectType": "both"
+    },
+    {
+      "id": "p-mpu223r2",
+      "campaignId": "c-mpu216w2",
+      "name": "asasas",
+      "description": "",
+      "createdAt": "2026-05-31T17:30:11.198Z",
+      "projectType": "both"
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "c-mpta00vs",
+      "companyId": "co-1779757716109",
+      "name": "jhjhjh",
+      "description": "",
+      "createdAt": "2026-05-31T04:24:44.920Z",
+      "projectType": "both"
+    },
+    {
+      "id": "c-mpu216w2",
+      "companyId": "co-1779757716109",
+      "name": "asjhajshas",
+      "description": "",
+      "createdAt": "2026-05-31T17:29:28.610Z",
+      "projectType": "both"
+    }
+  ],
+  "articleFolders": [
+    {
+      "id": "af-mpov4qff",
+      "companyId": "co-1779757716109",
+      "name": "News",
+      "description": "",
+      "createdAt": "2026-05-28T02:17:25.707Z"
+    }
+  ]
+}
