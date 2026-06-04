@@ -23,94 +23,10 @@
       "accessCode": "MA0013"
     }
   ],
-  "assets": [
-    {
-      "id": "a-mpzkmk2n",
-      "postingFolderId": "p-mpzkmgjb",
-      "s3FileUrl": "/uploads/upload_1780582129422_2_200226_mydata__social_media_posting_v1.jpg.jpeg",
-      "fileType": "image/jpeg",
-      "captionText": "",
-      "artworkComment": "",
-      "revisedCaption": "",
-      "scheduledDate": "2026-06-04",
-      "status": "Drafting",
-      "uploadedBy": "u-mpu1tgm8",
-      "uploadedByName": "Lukhman Faris",
-      "createdAt": "2026-06-04T14:08:49.439Z",
-      "updatedAt": "2026-06-04T14:08:49.439Z"
-    },
-    {
-      "id": "a-mpya921a",
-      "postingFolderId": "p-mpya4td5",
-      "s3FileUrl": "/uploads/upload_1780504237179_3.jpg",
-      "fileType": "image/jpeg",
-      "captionText": "",
-      "artworkComment": "",
-      "revisedCaption": "",
-      "scheduledDate": "2026-06-04",
-      "status": "Drafting",
-      "uploadedBy": "u-mpu1tgm8",
-      "uploadedByName": "Lukhman Faris",
-      "createdAt": "2026-06-03T16:30:37.198Z",
-      "updatedAt": "2026-06-03T16:30:37.198Z"
-    }
-  ],
-  "articles": [
-    {
-      "id": "art-mpzkndbc",
-      "articleFolderId": "af-mpov4qff",
-      "title": "asasas",
-      "body": "asasasasasasasasas",
-      "preparedBy": "Lukhman Faris",
-      "createdAt": "2026-06-04",
-      "coverImage": "/uploads/upload_1780582160273_5.jpg",
-      "status": "Published"
-    }
-  ],
-  "postingFolders": [
-    {
-      "id": "p-mpya4td5",
-      "campaignId": "c-mpveriot",
-      "name": "testt",
-      "description": "",
-      "createdAt": "2026-06-03T16:27:19.337Z",
-      "projectType": "both"
-    },
-    {
-      "id": "p-mpzkm31i",
-      "campaignId": "c-mpveriot",
-      "name": "9912",
-      "description": "",
-      "createdAt": "2026-06-04T14:08:27.366Z",
-      "projectType": "both"
-    },
-    {
-      "id": "p-mpzkmgjb",
-      "campaignId": "c-mpzkmboe",
-      "name": "ma 13131",
-      "description": "",
-      "createdAt": "2026-06-04T14:08:44.855Z",
-      "projectType": "both"
-    }
-  ],
-  "campaigns": [
-    {
-      "id": "c-mpveriot",
-      "companyId": "co-1779757716109",
-      "name": "asasas",
-      "description": "",
-      "createdAt": "2026-06-01T16:13:38.525Z",
-      "projectType": "both"
-    },
-    {
-      "id": "c-mpzkmboe",
-      "companyId": "co-1779757716109",
-      "name": "ma1112",
-      "description": "",
-      "createdAt": "2026-06-04T14:08:38.558Z",
-      "projectType": "both"
-    }
-  ],
+  "assets": [],
+  "articles": [],
+  "postingFolders": [],
+  "campaigns": [],
   "articleFolders": [
     {
       "id": "af-mpov4qff",

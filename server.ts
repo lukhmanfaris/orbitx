@@ -186,12 +186,14 @@ async function startServer() {
     res.json(newCompany);
   });
 
-  app.put("/api/companies/:companyId", (req, res) => {
+app.put("/api/companies/:companyId", (req, res) => {
     const { companyId } = req.params;
-    const { logoUrl, logoType, logoData, logoText } = req.body;
+    const { name, description, logoUrl, logoType, logoData, logoText } = req.body;
     const db = readDB();
     const company = db.companies.find(c => c.id === companyId);
     if (!company) { res.status(404).json({ error: "Company not found" }); return; }
+    if (name !== undefined) { company.name = name.trim(); }
+    if (description !== undefined) { company.description = description.trim(); }
     if (logoUrl !== undefined) { company.logoUrl = logoUrl; }
     if (logoType !== undefined) { company.logoType = logoType; }
     if (logoData !== undefined) { company.logoData = logoData; }

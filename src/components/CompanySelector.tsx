@@ -324,6 +324,7 @@ export default function CompanySelector() {
                       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoFileChange} />
                       {logoFileError && <p className="text-[9px] text-red-600 font-bold mt-1">{logoFileError}</p>}
                       <p className="text-[8px] text-neutral-400 mt-1.5">PNG, JPG, SVG, WebP — max 2MB</p>
+                      <p className="text-xs text-neutral-400 text-center mt-1.5">Recommended: 512×512px, PNG or SVG, transparent background</p>
                     </div>
                   ) : (
                     <div>
