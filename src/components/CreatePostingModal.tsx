@@ -1,29 +1,34 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAppContext } from '../AppContext';
 
 interface CreatePostingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onCreate: (name: string, description: string) => void;
+  onCreate: (name: string, description: string, campaignId?: string) => void;
+  campaignId?: string;
 }
 
-export default function CreatePostingModal({ isOpen, onClose, onCreate }: CreatePostingModalProps) {
+export default function CreatePostingModal({ isOpen, onClose, onCreate, campaignId }: CreatePostingModalProps) {
+  const { campaigns } = useAppContext();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [selectedCampaignId, setSelectedCampaignId] = useState(campaignId || '');
   const nameRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
+      setSelectedCampaignId(campaignId || (campaigns.length > 0 ? campaigns[0].id : ''));
       setTimeout(() => nameRef.current?.focus(), 100);
     } else {
       setName('');
       setDescription('');
     }
-  }, [isOpen]);
+  }, [isOpen, campaignId, campaigns]);
 
   const handleCreate = () => {
     if (!name.trim()) return;
-    onCreate(name.trim(), description.trim());
+    onCreate(name.trim(), description.trim(), selectedCampaignId || undefined);
     onClose();
   };
 
@@ -50,6 +55,23 @@ export default function CreatePostingModal({ isOpen, onClose, onCreate }: Create
             </div>
 
             <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-medium text-neutral-500 mb-1.5">Campaign</label>
+                {campaigns.length === 0 ? (
+                  <p className="text-xs text-neutral-400 py-2">No campaigns available. Create a campaign first.</p>
+                ) : (
+                  <select
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-neutral-400 focus:bg-white transition-all appearance-none cursor-pointer"
+                    value={selectedCampaignId}
+                    onChange={(e) => setSelectedCampaignId(e.target.value)}
+                  >
+                    {campaigns.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
               <div>
                 <label className="block text-xs font-medium text-neutral-500 mb-1.5">Posting Name</label>
                 <input
@@ -87,7 +109,7 @@ export default function CreatePostingModal({ isOpen, onClose, onCreate }: Create
               <motion.button
                 type="button"
                 onClick={handleCreate}
-                disabled={!name.trim()}
+                disabled={!name.trim() || !selectedCampaignId}
                 whileTap={{ scale: 0.97 }}
                 className="bg-neutral-900 text-white text-sm font-medium px-4 py-2 rounded-xl hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >

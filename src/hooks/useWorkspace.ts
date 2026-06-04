@@ -77,7 +77,9 @@ export interface UseWorkspaceReturn {
   getBrandBadgeClass: () => string;
   isCreatePostingModalOpen: boolean;
   setIsCreatePostingModalOpen: (v: boolean) => void;
-  handleCreatePostingFromModal: (name: string, description: string) => void;
+  modalTargetCampaignId: string;
+  setModalTargetCampaignId: (v: string) => void;
+  handleCreatePostingFromModal: (name: string, description: string, campaignId?: string) => void;
   showAllAssets: boolean;
   setShowAllAssets: (v: boolean) => void;
   handleDeleteCompany: (companyId: string, companyName: string) => Promise<void>;
@@ -111,6 +113,7 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
   const [folderError, setFolderError] = useState('');
   const [campaignPostingCounts, setCampaignPostingCounts] = useState<{ [campaignId: string]: number }>({});
   const [isCreatePostingModalOpen, setIsCreatePostingModalOpen] = useState(false);
+  const [modalTargetCampaignId, setModalTargetCampaignId] = useState<string>('');
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
     try { return localStorage.getItem('orbitx_sidebar_collapsed') === 'true'; }
@@ -270,21 +273,30 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     } catch (err: any) { console.error('Failed to create posting:', err); setFolderError(err.message || 'Network error. Please try again.'); addToast?.('error', 'Failed', err.message); }
   };
 
-  const handleCreatePostingFromModal = async (name: string, description: string) => {
+  const handleCreatePostingFromModal = async (name: string, description: string, campaignId?: string) => {
     if (!currentUser || !currentCompany) return;
     if (currentUser.role !== Role.TeamLead) {
       addToast?.('error', 'Access Denied', 'Only Team Leads can manage posting folders.');
       return;
     }
-    if (!selectedCampaignId) return;
+    const targetCampaignId = campaignId || selectedCampaignId;
+    if (!targetCampaignId) {
+      addToast?.('error', 'No Campaign Selected', 'Please select a campaign first before creating a posting.');
+      return;
+    }
     if (!name.trim()) return;
     try {
+      if (campaignId && campaignId !== selectedCampaignId) {
+        skipPostingFetchRef.current = true;
+        setSelectedCampaignId(campaignId);
+      }
       const body: any = { name: name.trim(), description: description.trim() };
       if (newPostingProjectType) body.projectType = newPostingProjectType;
-      const created = await apiPost<PostingFolder>(`/api/campaigns/${selectedCampaignId}/postings`, body);
-      setPostingFolders(prev => [...prev, created]);
+      const created = await apiPost<PostingFolder>(`/api/campaigns/${targetCampaignId}/postings`, body);
+      const freshData = await apiGet<PostingFolder[]>(`/api/campaigns/${targetCampaignId}/postings`);
+      setPostingFolders(freshData);
       setSelectedPostingId(created.id);
-      setCampaignPostingCounts(prev => ({ ...prev, [selectedCampaignId]: (prev[selectedCampaignId] || 0) + 1 }));
+      setCampaignPostingCounts(prev => ({ ...prev, [targetCampaignId]: (prev[targetCampaignId] || 0) + 1 }));
       addToast?.('success', 'Posting Created', created.name);
     } catch (err: any) { console.error('Failed to create posting:', err); addToast?.('error', 'Failed', err.message); }
   };
@@ -442,6 +454,7 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     handleCreatePosting, handleDeletePosting,
     getBrandBannerClass, getBrandBadgeClass,
     isCreatePostingModalOpen, setIsCreatePostingModalOpen,
+    modalTargetCampaignId, setModalTargetCampaignId,
     handleCreatePostingFromModal,
     showAllAssets, setShowAllAssets,
     handleDeleteCompany,

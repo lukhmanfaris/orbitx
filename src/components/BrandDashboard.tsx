@@ -38,9 +38,13 @@ export default function BrandDashboard() {
         setLoading(false);
       });
     }
-  }, [currentCompany, fetchRecentAssets, fetchRecentArticles]);
+  }, [currentCompany, fetchRecentAssets, fetchRecentArticles, postingFolders]);
 
   if (!currentCompany) return null;
+
+  const handleOpenCreatePosting = () => {
+    setIsCreatePostingModalOpen(true);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -87,8 +91,8 @@ export default function BrandDashboard() {
                   <UploadCloud className="w-10 h-10 text-neutral-300 mb-3" />
                   <p className="text-sm font-bold text-neutral-900">No media assets yet</p>
                   <p className="text-xs text-neutral-500 mt-1 mb-4">Upload media to your campaigns to see them here.</p>
-                  <button onClick={() => setIsCreatePostingModalOpen(true)} className="text-xs font-bold bg-neutral-900 text-white px-4 py-2 rounded-lg hover:bg-neutral-800 transition">
-                    Upload your first media
+                  <button onClick={handleOpenCreatePosting} className="text-xs font-bold bg-neutral-900 text-white px-4 py-2 rounded-lg hover:bg-neutral-800 transition">
+                    Create New Postings
                   </button>
                 </div>
               ) : (

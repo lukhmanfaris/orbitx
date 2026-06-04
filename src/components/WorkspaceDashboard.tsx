@@ -31,6 +31,7 @@ export default function WorkspaceDashboard() {
     isUploading, uploadProgress, uploadError,
     fileInputRef, setIsCreatingPosting,
     isCreatePostingModalOpen, setIsCreatePostingModalOpen,
+    modalTargetCampaignId,
     handleCreatePostingFromModal,
     handleS3FileUpload, handleDragOver, handleDragLeave, handleDrop,
     handleDeleteCampaign,
@@ -240,6 +241,7 @@ export default function WorkspaceDashboard() {
         isOpen={isCreatePostingModalOpen}
         onClose={() => setIsCreatePostingModalOpen(false)}
         onCreate={handleCreatePostingFromModal}
+        campaignId={modalTargetCampaignId || selectedCampaignId}
       />
     </div>
   );

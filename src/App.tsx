@@ -192,7 +192,7 @@ export default function App() {
     currentCompany, handleLogout,
     getBrandBadgeClass,
     proxyOriginalUser, handleExitProxy,
-    toasts, removeToast,
+    toasts, removeToast, addToast,
     setIsOnboardingOpen,
     campaigns, articleFolders, setSelectedArticleFolderId, setShowArticlesOverview, setSelectedArticleId,
     setAvailableCompanies,
@@ -295,6 +295,7 @@ export default function App() {
   const handleBrandSaved = (updated: any) => {
     setCurrentCompany(updated);
     setAvailableCompanies(ctx.availableCompanies.map(c => c.id === updated.id ? updated : c));
+    addToast('success', 'Brand Updated', `"${updated.name}" saved.`);
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -458,7 +459,7 @@ export default function App() {
                   </AnimatePresence>
                 </div>
 
-                <div className="relative" ref={settingsRef}>
+                <div className="relative hidden sm:block" ref={settingsRef}>
                   <button type="button" onClick={() => { setIsNotificationsOpen(false); setIsSettingsOpen(!isSettingsOpen); }} className="text-neutral-500 hover:text-neutral-900 p-2 rounded-lg hover:bg-neutral-100 transition-colors">
                     <Settings className="w-4 h-4" />
                   </button>

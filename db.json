@@ -26,14 +26,15 @@
   "assets": [],
   "articles": [],
   "postingFolders": [],
-  "campaigns": [],
-  "articleFolders": [
+  "campaigns": [
     {
-      "id": "af-mpov4qff",
+      "id": "c-mpzuvtup",
       "companyId": "co-1779757716109",
-      "name": "News",
+      "name": "343434",
       "description": "",
-      "createdAt": "2026-05-28T02:17:25.707Z"
+      "createdAt": "2026-06-04T18:55:58.177Z",
+      "projectType": "both"
     }
-  ]
+  ],
+  "articleFolders": []
 }
