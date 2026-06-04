@@ -78,6 +78,9 @@ export interface UseWorkspaceReturn {
   isCreatePostingModalOpen: boolean;
   setIsCreatePostingModalOpen: (v: boolean) => void;
   handleCreatePostingFromModal: (name: string, description: string) => void;
+  showAllAssets: boolean;
+  setShowAllAssets: (v: boolean) => void;
+  handleDeleteCompany: (companyId: string, companyName: string) => Promise<void>;
 }
 
 export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): UseWorkspaceReturn {
@@ -114,6 +117,7 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     catch { return false; }
   });
 
+  const [showAllAssets, setShowAllAssets] = useState(false);
   const skipPostingFetchRef = useRef(false);
 
   const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
@@ -285,6 +289,32 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     } catch (err: any) { console.error('Failed to create posting:', err); addToast?.('error', 'Failed', err.message); }
   };
 
+  const handleDeleteCompany = async (companyId: string, companyName: string) => {
+    if (!currentUser || currentUser.role !== Role.TeamLead) {
+      addToast?.('error', 'Access Denied', 'Only Team Leads can delete brand workspaces.');
+      return;
+    }
+    try {
+      const stats = await apiGet<{ campaigns: number; postingFolders: number; assets: number; articleFolders: number; articles: number }>(`/api/companies/${companyId}/stats`);
+      const confirmed = window.confirm(
+        `Delete brand '${companyName}'?\n\nThis will permanently delete:\n- ${stats.campaigns} campaigns\n- ${stats.postingFolders} posting folders\n- ${stats.assets} media assets\n- ${stats.articleFolders} article folders\n- ${stats.articles} articles\n\nThis action cannot be undone.`
+      );
+      if (!confirmed) return;
+      await apiDelete(`/api/companies/${companyId}`);
+      setAvailableCompanies(prev => prev.filter(c => c.id !== companyId));
+      if (currentCompany?.id === companyId) {
+        setCurrentCompany(null);
+        setSelectedCampaignId('');
+        setSelectedPostingId('');
+        setShowAllAssets(false);
+      }
+      addToast?.('success', 'Brand Deleted', `"${companyName}" removed with ${stats.campaigns} campaign${stats.campaigns !== 1 ? 's' : ''} and ${stats.assets} asset${stats.assets !== 1 ? 's' : ''}.`);
+    } catch (err: any) {
+      console.error(err);
+      addToast?.('error', 'Delete Failed', err.message || 'Failed to delete brand workspace.');
+    }
+  };
+
   const handleDeletePosting = async (postingId: string) => {
     if (!currentUser || currentUser.role !== Role.TeamLead) {
       addToast?.('error', 'Access Denied', 'Only Team Leads are authorized to delete posting folders.');
@@ -368,7 +398,17 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
   }, [sidebarCollapsed]);
 
   return {
-    currentCompany, setCurrentCompany,
+    currentCompany, 
+    setCurrentCompany: (c: Company | null) => {
+      setCurrentCompany(c);
+      setShowAllAssets(false);
+      if (c) {
+        setSelectedCampaignId('');
+        setSelectedPostingId('');
+        localStorage.removeItem('hub_campaign');
+        localStorage.removeItem('hub_posting');
+      }
+    },
     availableCompanies, setAvailableCompanies,
     campaigns, setCampaigns,
     selectedCampaignId, setSelectedCampaignId,
@@ -403,5 +443,7 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     getBrandBannerClass, getBrandBadgeClass,
     isCreatePostingModalOpen, setIsCreatePostingModalOpen,
     handleCreatePostingFromModal,
+    showAllAssets, setShowAllAssets,
+    handleDeleteCompany,
   };
 }

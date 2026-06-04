@@ -18,6 +18,7 @@ export default function FullArticleTab() {
     handleSaveEditorArticle,
     handleDeleteArticle,
     articles,
+    showArticlesOverview, setShowArticlesOverview,
   } = useAppContext();
 
   const [previewMode, setPreviewMode] = useState(false);
@@ -37,8 +38,12 @@ export default function FullArticleTab() {
     }
   }, [isNew]);
 
-  const handleSave = async () => {
-    await handleSaveEditorArticle();
+  const handleSaveDraft = async () => {
+    await handleSaveEditorArticle('Draft');
+  };
+
+  const handlePublish = async () => {
+    await handleSaveEditorArticle('Published');
   };
 
   const handleCoverFile = async (file: File) => {
@@ -101,6 +106,8 @@ export default function FullArticleTab() {
   };
 
   const wordCount = articleBody.trim().split(/\s+/).filter(Boolean).length;
+  const charNoSpaceCount = articleBody.replace(/\s/g, '').length;
+  const lineCount = articleBody.split('\n').length;
 
   const getPreviewHtml = () => {
     try {
@@ -124,197 +131,221 @@ export default function FullArticleTab() {
 
   if (!currentUser) return null;
 
+  const articleStatus = isNew ? 'Draft' : (existingArticle?.status || 'Draft');
+  const isDraft = articleStatus === 'Draft';
+
   return (
-    <div className="flex-1 flex flex-col bg-[#fafafa] overflow-y-auto">
-      {/* Top bar */}
-      <div className="bg-white border-b border-neutral-200 px-3 md:px-6 py-3 flex items-center justify-between gap-3 sticky top-0 z-20">
-        <div className="flex items-center gap-3 min-w-0">
+    <div className="flex-1 bg-neutral-50 flex flex-col overflow-hidden">
+      {/* Editor card */}
+      <div className="mx-4 my-4 bg-white rounded-2xl border border-neutral-100 shadow-sm flex flex-col overflow-hidden flex-1 min-h-0">
+
+        {/* Top bar */}
+        <div className="bg-white border-b border-neutral-100 px-6 py-4 flex items-center justify-between gap-3 flex-shrink-0">
           <button
             type="button"
-            onClick={() => { setSelectedArticleId(''); setArticleError(''); }}
-            className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 px-3 py-1.5 rounded-lg transition-colors border border-neutral-200 flex-shrink-0"
+            onClick={() => {
+              setSelectedArticleId('');
+              setArticleError('');
+              if (!selectedArticleFolderId) {
+                setShowArticlesOverview(true);
+              }
+            }}
+            className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
+            <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:inline">Back to {selectedFolder?.name || 'Articles'}</span>
             <span className="sm:hidden">Back</span>
           </button>
-          <span className={`text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${isNew ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-            {isNew ? 'Draft' : 'Published'}
+          <span className={`text-xs font-semibold px-2.5 py-1 rounded-lg border ${isDraft ? 'bg-neutral-100 text-neutral-600 border-neutral-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+            {articleStatus}
           </span>
         </div>
-      </div>
 
-      {/* Editor body */}
-      <div className="flex-1 max-w-3xl mx-auto w-full px-3 md:px-6 py-6 space-y-5">
-        {articleError && (
-          <div className="flex items-center gap-2 text-xs text-red-600 font-semibold bg-red-50 border border-red-200 rounded-lg px-4 py-2.5">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            <span>{articleError}</span>
-          </div>
-        )}
-
-        {/* Cover image */}
-        <div
-          className={`relative w-full h-40 rounded-xl border-2 border-dashed transition-colors overflow-hidden ${isDragOver ? 'border-neutral-900 bg-neutral-100' : articleCoverImage ? 'border-transparent' : 'border-neutral-300 bg-neutral-50'}`}
-          onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); }}
-          onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(false); }}
-          onDrop={handleCoverDrop}
-          onClick={() => !uploadingCover && coverInputRef.current?.click()}
-        >
-          {uploadingCover ? (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-              <Loader2 className="w-6 h-6 text-neutral-400 animate-spin" />
-              <span className="text-xs text-neutral-500 font-medium">Uploading cover...</span>
-            </div>
-          ) : articleCoverImage ? (
-            <>
-              <img src={articleCoverImage} alt="Cover" className="w-full h-full object-cover" />
-              <button
-                type="button"
-                onClick={(e) => { e.stopPropagation(); setArticleCoverImage(''); }}
-                className="absolute top-2 right-2 w-6 h-6 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  const a = document.createElement('a');
-                  a.href = articleCoverImage;
-                  a.download = articleCoverImage.split('/').pop()?.split('?')[0] || 'cover';
-                  a.click();
-                }}
-                className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white p-1.5 rounded-lg transition-colors"
-                title="Download cover image"
-              >
-                <Download className="w-3.5 h-3.5" />
-              </button>
-            </>
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-2 cursor-pointer">
-              <Image className="w-6 h-6 text-neutral-400" />
-              <span className="text-xs text-neutral-500 font-medium">Drop cover image or click to browse</span>
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto min-h-0">
+          {articleError && (
+            <div className="mx-6 mt-4 flex items-center gap-2 text-xs text-red-600 font-medium bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+              <AlertCircle className="w-4 h-4 flex-shrink-0" />
+              <span>{articleError}</span>
             </div>
           )}
-          <input
-            type="file"
-            ref={coverInputRef}
-            accept="image/*"
-            className="hidden"
-            onChange={(e) => { if (e.target.files?.[0]) handleCoverFile(e.target.files[0]); }}
-          />
-        </div>
 
-        {/* Title */}
-        <input
-          type="text"
-          value={articleTitle}
-          onChange={(e) => setArticleTitle(e.target.value)}
-          placeholder="Article title..."
-          autoFocus={isNew}
-          className="w-full text-[28px] font-bold text-neutral-900 bg-transparent border-none outline-none placeholder:text-neutral-300 leading-tight tracking-tight"
-        />
-
-        {/* Meta row */}
-        <div className="text-sm text-neutral-400">
-          By {articlePreparedBy || currentUser.username} · {articleDate || new Date().toISOString().split('T')[0]}
-        </div>
-
-        {/* Formatting toolbar */}
-        <div className="sticky top-[57px] z-10 bg-white border border-neutral-200 rounded-xl p-1.5 flex flex-wrap items-center gap-0.5 shadow-xs">
-          <button type="button" onClick={() => insertMarkdown('**', '**')} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Bold"><Bold className="w-4 h-4" /></button>
-          <button type="button" onClick={() => insertMarkdown('*', '*')} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Italic"><Italic className="w-4 h-4" /></button>
-          <button type="button" onClick={() => insertMarkdown('<u>', '</u>')} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Underline"><Underline className="w-4 h-4" /></button>
-          <div className="w-px h-5 bg-neutral-200 mx-1" />
-          <button type="button" onClick={() => insertMarkdown('# ', '', true)} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Heading 1"><Heading1 className="w-4 h-4" /></button>
-          <button type="button" onClick={() => insertMarkdown('## ', '', true)} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Heading 2"><Heading2 className="w-4 h-4" /></button>
-          <button type="button" onClick={() => insertMarkdown('### ', '', true)} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Heading 3"><Heading3 className="w-4 h-4" /></button>
-          <div className="w-px h-5 bg-neutral-200 mx-1" />
-          <button type="button" onClick={() => insertMarkdown('- ', '', true)} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Bullet list"><List className="w-4 h-4" /></button>
-          <button type="button" onClick={() => insertMarkdown('1. ', '', true)} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Numbered list"><ListOrdered className="w-4 h-4" /></button>
-          <button type="button" onClick={() => insertMarkdown('> ', '', true)} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Quote"><Quote className="w-4 h-4" /></button>
-          <div className="w-px h-5 bg-neutral-200 mx-1" />
-          <button type="button" onClick={() => insertMarkdown('[', '](url)')} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Link"><Link className="w-4 h-4" /></button>
-          <button type="button" onClick={() => insertMarkdown('\n---\n')} className="w-8 h-8 rounded flex items-center justify-center text-neutral-600 hover:bg-neutral-100 transition-colors" title="Horizontal rule"><Minus className="w-4 h-4" /></button>
-        </div>
-
-        {/* Write/Preview toggle */}
-        <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-0.5 w-fit">
-          <button
-            type="button"
-            onClick={() => setPreviewMode(false)}
-            className={`text-xs font-bold px-3 py-1.5 rounded-md transition-colors ${!previewMode ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-500 hover:text-neutral-700'}`}
+          {/* Cover image zone */}
+          <div
+            className={`relative mx-6 mt-4 h-40 rounded-xl border-2 border-dashed transition-colors overflow-hidden cursor-pointer ${
+              isDragOver ? 'border-neutral-400 bg-neutral-100' : articleCoverImage ? 'border-transparent' : 'border-neutral-200 bg-neutral-50/50 hover:bg-neutral-100'
+            }`}
+            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); }}
+            onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(false); }}
+            onDrop={handleCoverDrop}
+            onClick={() => !uploadingCover && coverInputRef.current?.click()}
           >
-            Write
-          </button>
-          <button
-            type="button"
-            onClick={() => setPreviewMode(true)}
-            className={`text-xs font-bold px-3 py-1.5 rounded-md transition-colors ${previewMode ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-500 hover:text-neutral-700'}`}
-          >
-            Preview
-          </button>
-        </div>
-
-        {/* Editor / Preview */}
-        {previewMode ? (
-          <div className="relative bg-white rounded-xl p-4 min-h-[400px] border border-neutral-200">
-            <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10">
-              <button
-                type="button"
-                onClick={handleCopyText}
-                className="text-sm border border-neutral-200 rounded-lg px-3 py-1.5 text-neutral-500 hover:text-neutral-900 transition-colors flex items-center gap-1.5 bg-white"
-              >
-                {copiedType === 'text' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : null}
-                <span>Copy Text</span>
-              </button>
-              <button
-                type="button"
-                onClick={handleCopyHtml}
-                className="text-sm border border-neutral-200 rounded-lg px-3 py-1.5 text-neutral-500 hover:text-neutral-900 transition-colors flex items-center gap-1.5 bg-white"
-              >
-                {copiedType === 'html' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : null}
-                <span>Copy HTML</span>
-              </button>
-            </div>
-            <div
-              className="article-preview text-neutral-800 pt-10"
-              dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
+            {uploadingCover ? (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                <Loader2 className="w-6 h-6 text-neutral-400 animate-spin" />
+                <span className="text-xs text-neutral-500">Uploading cover...</span>
+              </div>
+            ) : articleCoverImage ? (
+              <>
+                <img src={articleCoverImage} alt="Cover" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setArticleCoverImage(''); }}
+                  className="absolute top-2 right-2 w-6 h-6 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const a = document.createElement('a');
+                    a.href = articleCoverImage;
+                    a.download = articleCoverImage.split('/').pop()?.split('?')[0] || 'cover';
+                    a.click();
+                  }}
+                  className="absolute bottom-2 right-2 bg-black/50 hover:bg-black/70 text-white p-1.5 rounded-lg transition-colors"
+                  title="Download cover image"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                </button>
+              </>
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center gap-2">
+                <Image className="w-6 h-6 text-neutral-300" />
+                <span className="text-xs text-neutral-400">Drop cover image or click to browse</span>
+              </div>
+            )}
+            <input
+              type="file"
+              ref={coverInputRef}
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { if (e.target.files?.[0]) handleCoverFile(e.target.files[0]); }}
             />
           </div>
-        ) : (
-          <textarea
-            ref={textareaRef}
-            value={articleBody}
-            onChange={(e) => setArticleBody(e.target.value)}
-            placeholder="Write your article in markdown..."
-            className="w-full min-h-[400px] text-sm text-neutral-800 leading-[1.8] bg-white border border-neutral-200 rounded-xl p-4 focus:border-neutral-400 focus:ring-0 transition-colors resize-y font-mono"
+
+          {/* Title */}
+          <input
+            type="text"
+            value={articleTitle}
+            onChange={(e) => setArticleTitle(e.target.value)}
+            placeholder="Article title..."
+            autoFocus={isNew}
+            className="w-full text-3xl font-bold tracking-tight text-neutral-900 bg-transparent border-none outline-none placeholder:text-neutral-300 leading-tight px-6 py-4"
           />
-        )}
+
+          {/* Meta row */}
+          <div className="px-6 pb-4 text-sm text-neutral-400">
+            By {articlePreparedBy || currentUser.username} · {articleDate || new Date().toISOString().split('T')[0]}
+          </div>
+
+          {/* Formatting toolbar */}
+          <div className="sticky top-0 z-10 bg-neutral-50 border-b border-neutral-100 px-6 py-2 flex flex-wrap items-center gap-0.5">
+            <button type="button" onClick={() => insertMarkdown('**', '**')} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Bold"><Bold className="w-4 h-4" /></button>
+            <button type="button" onClick={() => insertMarkdown('*', '*')} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Italic"><Italic className="w-4 h-4" /></button>
+            <button type="button" onClick={() => insertMarkdown('<u>', '</u>')} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Underline"><Underline className="w-4 h-4" /></button>
+            <div className="w-px h-4 bg-neutral-200 mx-1" />
+            <button type="button" onClick={() => insertMarkdown('# ', '', true)} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Heading 1"><Heading1 className="w-4 h-4" /></button>
+            <button type="button" onClick={() => insertMarkdown('## ', '', true)} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Heading 2"><Heading2 className="w-4 h-4" /></button>
+            <button type="button" onClick={() => insertMarkdown('### ', '', true)} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Heading 3"><Heading3 className="w-4 h-4" /></button>
+            <div className="w-px h-4 bg-neutral-200 mx-1" />
+            <button type="button" onClick={() => insertMarkdown('- ', '', true)} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Bullet list"><List className="w-4 h-4" /></button>
+            <button type="button" onClick={() => insertMarkdown('1. ', '', true)} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Numbered list"><ListOrdered className="w-4 h-4" /></button>
+            <button type="button" onClick={() => insertMarkdown('> ', '', true)} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Quote"><Quote className="w-4 h-4" /></button>
+            <div className="w-px h-4 bg-neutral-200 mx-1" />
+            <button type="button" onClick={() => insertMarkdown('[', '](url)')} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Link"><Link className="w-4 h-4" /></button>
+            <button type="button" onClick={() => insertMarkdown('\n---\n')} className="w-8 h-8 rounded-lg flex items-center justify-center text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 transition-colors" title="Horizontal rule"><Minus className="w-4 h-4" /></button>
+
+            <div className="ml-auto flex items-center gap-1 bg-neutral-100 rounded-lg p-0.5">
+              <button
+                type="button"
+                onClick={() => setPreviewMode(false)}
+                className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${!previewMode ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+              >
+                Write
+              </button>
+              <button
+                type="button"
+                onClick={() => setPreviewMode(true)}
+                className={`text-xs font-medium px-3 py-1.5 rounded-md transition-colors ${previewMode ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+              >
+                Preview
+              </button>
+            </div>
+          </div>
+
+          {/* Editor / Preview */}
+          {previewMode ? (
+            <div className="relative px-6 py-4 min-h-[400px]">
+              <div className="absolute top-4 right-6 flex items-center gap-1.5 z-10">
+                <button
+                  type="button"
+                  onClick={handleCopyText}
+                  className="text-xs border border-neutral-200 rounded-lg px-3 py-1.5 text-neutral-500 hover:text-neutral-900 transition-colors flex items-center gap-1.5 bg-white"
+                >
+                  {copiedType === 'text' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : null}
+                  <span>Copy Text</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCopyHtml}
+                  className="text-xs border border-neutral-200 rounded-lg px-3 py-1.5 text-neutral-500 hover:text-neutral-900 transition-colors flex items-center gap-1.5 bg-white"
+                >
+                  {copiedType === 'html' ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : null}
+                  <span>Copy HTML</span>
+                </button>
+              </div>
+              <div
+                className="article-preview text-neutral-800 pt-10"
+                dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
+              />
+            </div>
+          ) : (
+            <textarea
+              ref={textareaRef}
+              value={articleBody}
+              onChange={(e) => setArticleBody(e.target.value)}
+              placeholder="Write your article in markdown..."
+              className="w-full min-h-[400px] text-sm text-neutral-800 leading-[1.8] bg-transparent border-none outline-none px-6 py-4 resize-y font-mono focus:ring-0"
+            />
+          )}
+        </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-neutral-200 pb-8">
+        <div className="bg-white border-t border-neutral-100 px-6 py-4 flex items-center justify-between flex-shrink-0">
           <div>
             {!isNew && existingArticle && (
               <button
                 type="button"
                 onClick={() => handleDeleteArticle(existingArticle.id)}
-                className="text-xs font-semibold text-red-600 hover:text-red-700 transition-colors"
+                className="text-xs font-medium text-red-500 hover:text-red-700 transition-colors"
               >
                 Delete article
               </button>
             )}
           </div>
-          <span className="text-xs text-neutral-400 font-mono">{wordCount} words</span>
-          <button
-            type="button"
-            onClick={handleSave}
-            className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg px-6 py-2 text-xs font-bold transition-colors flex items-center gap-1.5"
-          >
-            <Save className="w-3.5 h-3.5" />
-            <span>Save</span>
-          </button>
+          <span className="text-xs text-neutral-400 font-mono">
+            {wordCount}w · {charNoSpaceCount}c · {lineCount}l
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              className="text-sm text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 px-4 py-2 rounded-xl transition-colors flex items-center gap-1.5"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>Save Draft</span>
+            </button>
+            <button
+              type="button"
+              onClick={handlePublish}
+              className="bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium px-4 py-2 rounded-xl transition-colors flex items-center gap-1.5"
+            >
+              <Save className="w-3.5 h-3.5" />
+              <span>Publish</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>

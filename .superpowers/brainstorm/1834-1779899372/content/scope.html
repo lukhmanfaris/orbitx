@@ -1,0 +1,65 @@
+<h2>What do you mean by "build the full frontend"?</h2>
+<p class="subtitle">OrbitX already has a working React frontend. What's your goal?</p>
+
+<div class="section">
+  <h3>Current Frontend State</h3>
+  <div class="mockup">
+    <div class="mockup-header">OrbitX Today — Digital Media Asset Manager</div>
+    <div class="mockup-body">
+      <div class="mock-nav">Login → Company Selector → Workspace</div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <div class="mock-sidebar" style="flex:0 0 200px;">Folder Sidebar<br><span style="font-size:11px;color:#888;">Campaigns & Postings</span></div>
+        <div class="mock-content" style="flex:1;">
+          <div style="display:flex; gap:8px;">
+            <div class="mock-button">Media Tab</div>
+            <div class="mock-button">Articles Tab</div>
+          </div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <div class="placeholder" style="width:120px;height:80px;">Asset Card</div>
+            <div class="placeholder" style="width:120px;height:80px;">Asset Card</div>
+            <div class="placeholder" style="width:120px;height:80px;">Asset Card</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:8px; display:flex; gap:8px;">
+        <span class="label">Built with:</span>
+        <span class="label">React 19</span>
+        <span class="label">TypeScript</span>
+        <span class="label">Tailwind 4</span>
+        <span class="label">Motion</span>
+        <span class="label">Express API</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="rebuild" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Rebuild from scratch</h3>
+      <p>Completely rebuild the frontend with a fresh approach, design system, and architecture. Keep the Express backend API.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="redesign" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Major redesign of existing frontend</h3>
+      <p>Overhaul the UI/UX, add new features, improve code structure (extract hooks, split AppContext), but keep the existing React/Vite/Tailwind stack.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="enhance" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Incremental enhancement</h3>
+      <p>Fix issues, add missing features (projectType selector, AI integration with Gemini), improve polish. Keep current structure intact.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="other" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Something else</h3>
+      <p>You have a different vision. Describe it in the terminal.</p>
+    </div>
+  </div>
+</div>

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronRight, Plus, X, Upload, Building2 } from 'lucide-react';
+import { ChevronRight, Plus, X, Upload, Building2, Trash2 } from 'lucide-react';
 import { Role } from '../types';
 import { useAppContext } from '../AppContext';
 import { BRAND_ICONS, getPresetIconById } from '../constants/brandIcons';
@@ -24,6 +24,7 @@ export default function CompanySelector() {
     setNewCompanyLogoData,
     handleCreateCompany,
     handleLogoUpload,
+    handleDeleteCompany,
   } = useAppContext();
 
   const [logoTab, setLogoTab] = useState<'upload' | 'icon'>('icon');
@@ -76,25 +77,25 @@ export default function CompanySelector() {
 
   const renderCompanyLogo = (comp: typeof availableCompanies[0]) => {
     if (comp.logoType === 'upload' && comp.logoData) {
-      return <img src={comp.logoData} alt={comp.name} className="h-10 w-auto rounded-lg shadow-xs object-contain" />;
+      return <img src={comp.logoData} alt={comp.name} className="w-14 h-14 rounded-xl shadow-sm object-contain" />;
     }
     if (comp.logoType === 'icon' && comp.logoData) {
       const IconComponent = getPresetIconById(comp.logoData);
       if (IconComponent) {
         return (
-          <div className="p-2.5 rounded-xl bg-neutral-100 text-neutral-700 shadow-xs">
-            <IconComponent className="w-5 h-5" />
+          <div className="w-14 h-14 flex items-center justify-center rounded-xl bg-neutral-100 text-neutral-700 shadow-sm">
+            <IconComponent className="w-6 h-6" />
           </div>
         );
       }
     }
     if (comp.logoUrl) {
-      return <img src={comp.logoUrl} alt={comp.name} className="h-10 w-auto rounded-lg shadow-xs" />;
+      return <img src={comp.logoUrl} alt={comp.name} className="w-14 h-14 rounded-xl shadow-sm object-cover" />;
     }
     const prefix = comp.name.substring(0, 3).toUpperCase();
     return (
-      <div className="p-2.5 rounded-xl bg-neutral-100 text-neutral-800 font-black text-xs font-mono tracking-wider shadow-xs">
-        {prefix}-PORTAL
+      <div className="w-14 h-14 flex items-center justify-center rounded-xl bg-neutral-100 text-neutral-800 font-bold text-[10px] font-mono tracking-wider shadow-sm">
+        {prefix}
       </div>
     );
   };
@@ -125,7 +126,7 @@ export default function CompanySelector() {
 
   return (
     <>
-      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-sn from-neutral-50 via-neutral-100 to-neutral-200 min-h-[85vh]">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 bg-gradient-to-br from-neutral-50 via-neutral-100 to-neutral-200 min-h-[85vh]">
         <div className="max-w-5xl w-full text-center mb-8">
           <span className="text-[11px] font-mono font-black tracking-widest text-[#047857] bg-emerald-50 px-3.5 py-1.5 rounded-full border border-emerald-200/50 shadow-xs mb-3 inline-block">
             CONGLOMERATE CENTRAL GATEWAY
@@ -155,10 +156,13 @@ export default function CompanySelector() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl w-full">
           {availableCompanies.map((comp) => {
             return (
-              <div
+              <motion.div
                 key={comp.id}
                 onClick={() => setCurrentCompany(comp)}
-                className={`group relative bg-white border border-[#e5e5e5] rounded-2xl p-8 cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between overflow-hidden hover:border-neutral-500`}
+                className="group relative bg-white border border-neutral-100 rounded-2xl p-5 cursor-pointer shadow-sm flex flex-col justify-between overflow-hidden"
+                whileHover={{ y: -2, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}
+                whileTap={{ scale: 0.99 }}
+                transition={{ type: "spring", stiffness: 300, damping: 30 }}
               >
                 <div>
                   <div className="flex items-center justify-between mb-6">
@@ -177,13 +181,26 @@ export default function CompanySelector() {
                         </div>
                       )}
                     </div>
+                    <div className="flex items-center gap-2">
+                    {currentUser?.role === Role.TeamLead && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteCompany(comp.id, comp.name); }}
+                        className="p-1 rounded text-neutral-400 hover:text-red-500 transition-colors"
+                        title="Delete brand workspace"
+                        aria-label={`Delete ${comp.name}`}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                     <ChevronRight className={`w-5 h-5 text-neutral-300 group-hover:text-neutral-900 group-hover:translate-x-1 transition-all`} />
                   </div>
+                  </div>
 
-                  <h3 className="text-xl font-bold text-neutral-900 tracking-tight mb-2 group-hover:text-black">
+                  <h3 className="text-base font-semibold tracking-tight text-neutral-900 mb-1">
                     {comp.name}
                   </h3>
-                  <p className="text-xs text-neutral-500 leading-relaxed mb-6">
+                  <p className="text-sm text-neutral-400 mt-1 leading-relaxed mb-4">
                     {comp.description}
                   </p>
                 </div>
@@ -196,11 +213,11 @@ export default function CompanySelector() {
                     {comp.logoText || comp.name.substring(0, 3).toUpperCase()}
                   </span>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
 
-          <div
+          <motion.div
             onClick={() => {
               setIsCreatingCompany(true);
               setCompanyErrorMsg("");
@@ -210,19 +227,22 @@ export default function CompanySelector() {
               setNewCompanyLogoType('none');
               setNewCompanyLogoData('');
             }}
-            className="group relative bg-[#fafafa] hover:bg-white border-2 border-dashed border-neutral-300 hover:border-neutral-900 rounded-2xl p-8 cursor-pointer shadow-xs transition-all flex flex-col items-center justify-center min-h-[240px] hover:shadow-lg"
+            className="group relative rounded-2xl p-5 cursor-pointer flex flex-col items-center justify-center min-h-[240px] border-2 border-dashed border-neutral-200 hover:border-neutral-400 transition-colors"
+            whileHover={{ y: -2, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}
+            whileTap={{ scale: 0.99 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
             title="Add a new subsidiary corporate workspace brand"
           >
-            <div className="w-12 h-12 rounded-full border border-dashed border-neutral-400 group-hover:border-neutral-900 group-hover:bg-neutral-900 bg-neutral-100 flex items-center justify-center transition-all mb-3">
-              <Plus className="w-6 h-6 text-neutral-500 group-hover:text-white transition-colors" />
+            <div className="w-12 h-12 rounded-xl bg-neutral-100 flex items-center justify-center mb-3">
+              <Plus className="w-6 h-6 text-neutral-400" />
             </div>
-            <h3 className="text-sm font-extrabold font-mono uppercase tracking-wider text-neutral-500 group-hover:text-neutral-900 transition-colors">
+            <h3 className="text-sm font-semibold tracking-tight text-neutral-400">
               Add Subsidiary Brand
             </h3>
             <p className="text-[10px] text-neutral-400 mt-2 max-w-[200px] text-center font-sans leading-relaxed">
               Provision a dynamic brand workspace container for campaigns, media, and digital copy registers.
             </p>
-          </div>
+          </motion.div>
         </div>
         )}
       </div>
@@ -238,7 +258,7 @@ export default function CompanySelector() {
             >
               <div className="flex items-center justify-between border-b border-neutral-100 pb-3 mb-4">
                 <div className="flex items-center space-x-2 text-neutral-900">
-                  <span className="p-1.5 rounded-lg bg-neutral-100 text-neutral-850 text-xs font-extrabold font-mono">+</span>
+                  <span className="p-1.5 rounded-lg bg-neutral-100 text-neutral-800 text-xs font-extrabold font-mono">+</span>
                   <h3 className="text-sm font-black uppercase font-mono tracking-wider">Create Brand Workspace</h3>
                 </div>
                 <button
@@ -337,7 +357,7 @@ export default function CompanySelector() {
                   <label className="block text-[9px] font-bold text-neutral-500 uppercase font-mono tracking-wider mb-1">Brand Description</label>
                   <textarea
                     rows={3}
-                    className="w-full text-xs p-2.5 bg-neutral-50 border border-[#e5e5e5] rounded-xl focus:outline-none focus:border-neutral-900 focus:bg-white text-neutral-905"
+                    className="w-full text-xs p-2.5 bg-neutral-50 border border-[#e5e5e5] rounded-xl focus:outline-none focus:border-neutral-900 focus:bg-white text-neutral-900"
                     placeholder="High performance athletic gear conglomerate."
                     value={newCompanyDescription}
                     onChange={(e) => setNewCompanyDescription(e.target.value)}
@@ -351,14 +371,14 @@ export default function CompanySelector() {
                 <div className="flex items-center space-x-2.5 pt-2 border-t border-neutral-100">
                   <button
                     type="submit"
-                    className="flex-1 bg-neutral-950 hover:bg-neutral-850 text-white font-mono font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+                    className="flex-1 bg-neutral-900 hover:bg-neutral-800 text-white font-mono font-bold text-xs py-2.5 rounded-lg transition-all shadow-sm cursor-pointer"
                   >
                     Provision Workspace
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsCreatingCompany(false)}
-                    className="bg-white hover:bg-neutral-50 border border-neutral-300 text-neutral-700 font-bold text-xs px-4 py-2.5 rounded-xl transition cursor-pointer"
+                    className="bg-white hover:bg-neutral-50 border border-neutral-200 text-neutral-600 font-bold text-xs px-4 py-2.5 rounded-lg transition cursor-pointer"
                   >
                     Cancel
                   </button>

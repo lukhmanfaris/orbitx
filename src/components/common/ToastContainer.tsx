@@ -35,7 +35,7 @@ export default function ToastContainer({ toasts, onRemove }: ToastContainerProps
               initial={{ opacity: 0, x: 80, scale: 0.95 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 80, scale: 0.95 }}
-              className={`${colors.bg} ${colors.border} border rounded-xl p-3 shadow-lg pointer-events-auto flex items-start gap-3`}
+              className={`${colors.bg} ${colors.border} border rounded-xl p-3 shadow-lg pointer-events-auto flex items-start gap-3 t-toast-active`}
             >
               <Icon className={`w-5 h-5 flex-shrink-0 mt-0.5 ${colors.icon}`} />
               <div className="flex-1 min-w-0">

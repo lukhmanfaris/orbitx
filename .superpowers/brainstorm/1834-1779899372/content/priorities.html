@@ -1,0 +1,72 @@
+<h2>Which enhancements are the priority?</h2>
+<p class="subtitle">Select everything you want tackled. Order matters — I'll sequence work accordingly.</p>
+
+<div class="section">
+  <h3>From the CURSOR-HANDOFF.md (already identified)</h3>
+  
+  <div class="options" data-multiselect>
+    <div class="option" data-choice="project-type" onclick="toggleSelect(this)">
+      <div class="letter">1</div>
+      <div class="content">
+        <h3>ProjectType selector in folder creation</h3>
+        <p>Backend supports "media-only", "articles-only", "both". Frontend form still needs the selector dropdown (Priority 1A).</p>
+      </div>
+    </div>
+    <div class="option" data-choice="split-context" onclick="toggleSelect(this)">
+      <div class="letter">2</div>
+      <div class="content">
+        <h3>Split AppContext monolith</h3>
+        <p>Extract hooks, reduce the 999-line AppContext.tsx into focused modules (media hook, articles hook, workspace hook, etc.)</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>New features you might want</h3>
+
+  <div class="options" data-multiselect>
+    <div class="option" data-choice="gemini-ai" onclick="toggleSelect(this)">
+      <div class="letter">3</div>
+      <div class="content">
+        <h3>Gemini AI integration</h3>
+        <p>Use the existing GEMINI_API_KEY for AI-assisted captions, content generation, or smart search. Key is in .env but no AI code exists yet.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="ui-polish" onclick="toggleSelect(this)">
+      <div class="letter">4</div>
+      <div class="content">
+        <h3>UI/UX polish pass</h3>
+        <p>Refine visual design: better spacing, typography, empty states, loading skeletons, transitions, responsive improvements, accessibility.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="onboarding-flow" onclick="toggleSelect(this)">
+      <div class="letter">5</div>
+      <div class="content">
+        <h3>Improve onboarding & first-run experience</h3>
+        <p>Better empty states when no companies/campaigns exist, guided first-run flow, clearer role explanations.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="error-handling" onclick="toggleSelect(this)">
+      <div class="letter">6</div>
+      <div class="content">
+        <h3>Error handling & resilience</h3>
+        <p>Add error boundaries, toast notifications for API failures, retry logic, optimistic updates, loading states across all views.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="asset-enhance" onclick="toggleSelect(this)">
+      <div class="letter">7</div>
+      <div class="content">
+        <h3>Enhanced asset management</h3>
+        <p>Batch upload, bulk status changes, drag-to-reorder, advanced filtering, keyboard shortcuts, video/audio support.</p>
+      </div>
+    </div>
+    <div class="option" data-choice="collab" onclick="toggleSelect(this)">
+      <div class="letter">8</div>
+      <div class="content">
+        <h3>Collaboration features</h3>
+        <p>Comments on assets, @mentions, review/approval workflow, notification improvements, real-time updates.</p>
+      </div>
+    </div>
+  </div>
+</div>

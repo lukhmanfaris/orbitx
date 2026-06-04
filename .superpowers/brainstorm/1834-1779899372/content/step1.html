@@ -1,0 +1,107 @@
+<h2>Step 1: Split AppContext — Hook Extraction</h2>
+<p class="subtitle">Breaking the 999-line AppContext.tsx into focused, testable hooks</p>
+
+<div class="section">
+  <h3>Why this first</h3>
+  <div class="mockup">
+    <div class="mockup-body" style="padding:16px;">
+      <p style="font-size:13px; line-height:1.6; color:var(--font-primary);">
+        AppContext.tsx contains <strong>~90 state variables</strong> and <strong>~30 handler functions</strong> in a single file. Every component that consumes one state value re-renders when any other state changes. Extracting focused hooks makes subsequent work (error handling, Polish) safer and easier.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Target Structure</h3>
+  <div class="mockup">
+    <div class="mockup-header">src/ after refactor</div>
+    <div class="mockup-body" style="font-family: monospace; font-size:12px; line-height:1.6;">
+      <div style="margin-bottom:8px;"><strong>src/hooks/</strong></div>
+      <div style="padding-left:16px; border-left:2px solid var(--accent);">
+        <div style="color:#059669; margin-bottom:4px;"><strong>useAuth.ts</strong> (~80 lines)</div>
+        <div style="padding-left:12px; font-size:11px; color:var(--font-secondary); margin-bottom:8px;">
+          currentUser, accessCodeInput, loginError, proxyOriginalUser<br>
+          handleCodeLogin, handleLogout, handleProxyLogin, handleExitProxy<br>
+          rememberedUsers, removeRememberedUser, rememberUserInLocalStorage
+        </div>
+        
+        <div style="color:#2563eb; margin-bottom:4px;"><strong>useWorkspace.ts</strong> (~200 lines)</div>
+        <div style="padding-left:12px; font-size:11px; color:var(--font-secondary); margin-bottom:8px;">
+          currentCompany, availableCompanies, campaigns, postingFolders<br>
+          selectedCampaignId, selectedPostingId, campaignPostingCounts<br>
+          fetchCompanies, fetchCampaigns, fetchPostings, fetchDirectoryInfo<br>
+          handleCreateCompany, handleLogoUpload, handleCreateCampaign<br>
+          handleDeleteCampaign, handleCreatePosting, handleDeletePosting<br>
+          newCampaignProjectType, newPostingName (form state)<br>
+        </div>
+        
+        <div style="color:#7c3aed; margin-bottom:4px;"><strong>useMedia.ts</strong> (~150 lines)</div>
+        <div style="padding-left:12px; font-size:11px; color:var(--font-secondary); margin-bottom:8px;">
+          assets, loadingAssets, searchQuery, statusFilter, sortOrder<br>
+          filteredAssets (computed), draftCount, refineCount, readyCount<br>
+          isDragOver, isUploading, uploadProgress, uploadError<br>
+          editingAssetId, editCaption, editArtworkComment, etc.<br>
+          handleS3FileUpload, handleDragOver/Drop, handleQuickStatusUpdate<br>
+          triggerEditing, saveEdits, deleteAsset, copyCaptionToClipboard<br>
+        </div>
+        
+        <div style="color:#d97706; margin-bottom:4px;"><strong>useArticles.ts</strong> (~120 lines)</div>
+        <div style="padding-left:12px; font-size:11px; color:var(--font-secondary); margin-bottom:8px;">
+          articles, loadingArticles, activeWorkspaceTab<br>
+          isArticleFullTab, isCreatingArticle, articleTitle/Body/Date<br>
+          editingArticleId, articleError<br>
+          handleCreateArticle, handleUpdateArticle, handleDeleteArticle<br>
+        </div>
+        
+        <div style="color:#dc2626; margin-bottom:4px;"><strong>useOnboarding.ts</strong> (~100 lines)</div>
+        <div style="padding-left:12px; font-size:11px; color:var(--font-secondary); margin-bottom:8px;">
+          isOnboardingOpen, directoryUsers, onboardSearchQuery<br>
+          onboardName/Role/AccessCode/Error/Success/Password<br>
+          editingUserId/Name/Role/Code/Error<br>
+          handleOnboardMember, handleSaveMemberEdit, handleDeleteMember<br>
+          triggerAutoCodeGeneration, triggerEditAutoCodeGeneration<br>
+        </div>
+        
+        <div style="color:#0891b2; margin-bottom:4px;"><strong>useActivity.ts</strong> (~30 lines)</div>
+        <div style="padding-left:12px; font-size:11px; color:var(--font-secondary); margin-bottom:8px;">
+          activities, pushActivity
+        </div>
+      </div>
+      <div style="margin-top:12px;"><strong>src/utils/</strong></div>
+      <div style="padding-left:16px; border-left:2px solid var(--accent);">
+        <div style="color:#525252; margin-bottom:4px;"><strong>api.ts</strong> — shared fetch wrapper with error handling</div>
+        <div style="padding-left:12px; font-size:11px; color:var(--font-secondary);">
+          parseJSON(), apiGet(url), apiPost(url, body), apiPut(url, body), apiDelete(url)
+        </div>
+      </div>
+      <div style="margin-top:12px;"><strong>src/AppContext.tsx</strong> — thin provider (~80 lines)</div>
+      <div style="padding-left:16px; font-size:11px; color:var(--font-secondary);">
+        Composes all hooks, exposes combined context value. No handler logic.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Key rules</h3>
+  <div class="pros-cons">
+    <div class="pros"><h4>Do</h4>
+      <ul>
+        <li>Each hook manages ONE domain's state and handlers</li>
+        <li>Hooks call apiGet/apiPost from utils/api.ts</li>
+        <li>Hooks accept shared deps (currentUser, currentCompany) as params or use other hooks</li>
+        <li>Same localStorage keys (hub_user, hub_company, etc.) — zero behavior change</li>
+        <li>useEffect data-fetching chains preserved exactly</li>
+      </ul>
+    </div>
+    <div class="cons"><h4>Don't</h4>
+      <ul>
+        <li>Don't change any API calls, types, or localStorage keys</li>
+        <li>Don't change UI components — they still use useAppContext()</li>
+        <li>Don't introduce new dependencies</li>
+        <li>Don't optimise prematurely (no useMemo/useCallback unless needed)</li>
+      </ul>
+    </div>
+  </div>
+</div>

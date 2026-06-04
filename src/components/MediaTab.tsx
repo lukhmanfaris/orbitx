@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   RefreshCw,
-  Search, Filter, ArrowUpDown, FileQuestion, Image, Upload, Plus,
+  Search, ArrowUpDown, FileQuestion, Image, Upload, Plus,
 } from 'lucide-react';
 import { Role, AssetStatus } from '../types';
 import AssetCard from './AssetCard';
@@ -24,39 +24,35 @@ export default function MediaTab() {
   if (!currentUser) return null;
 
   return (
-    <div className="relative">
+    <div className="relative space-y-4">
       {currentUser.role === Role.ContentWriter && (
-        <div className="bg-white border border-[#e5e5e5] rounded-xl p-5 text-center shadow-xs">
+        <div className="bg-white border border-[#e5e5e5] rounded-xl p-4 text-center shadow-xs">
           <p className="text-xs text-neutral-600 leading-relaxed">Designers hold authorized clearances to upload digital media assets. As a registered Content Writer, you maintain clearance to write, amend, and schedule digital marketing caption drafts.</p>
         </div>
       )}
 
-      <div className="bg-white border border-[#e5e5e5] rounded-xl p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5 shadow-xs">
+      <div className="bg-white border border-neutral-100 rounded-2xl shadow-sm p-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3.5">
         <div className="relative flex-1 w-full md:max-w-sm">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
-          <input type="text" className="w-full text-xs pl-9 pr-4 py-2 bg-neutral-50 hover:bg-neutral-100 focus:bg-white border border-[#e5e5e5] rounded-lg focus:outline-none focus:border-neutral-900 transition-colors" placeholder="Search within posting caption copy & hashtags..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          <input type="text" className="w-full text-xs pl-9 pr-4 py-2.5 bg-white border border-neutral-200 rounded-xl shadow-sm focus:outline-none focus:border-neutral-400 focus:shadow-md transition-all" placeholder="Search caption copy & hashtags..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
         </div>
-        <div className="flex flex-wrap items-center gap-3 overflow-x-auto pb-1">
-          <div className="flex items-center space-x-1.5 text-xs text-neutral-500">
-            <Filter className="w-3.5 h-3.5" />
-            <span className="font-mono text-[9px] font-bold uppercase tracking-wider">Filter State:</span>
-          </div>
-          <div className="flex bg-neutral-100 rounded-lg p-0.5 border border-neutral-200">
+        <div className="flex flex-wrap items-center gap-2 overflow-x-auto pb-1">
+          <div className="flex items-center gap-1">
             {['All', AssetStatus.Drafting, AssetStatus.Refining, AssetStatus.Ready].map(opt => {
               const isSelect = statusFilter === opt;
               const visualLabel = opt === AssetStatus.Ready ? 'Ready' : opt;
               return (
                 <button key={opt} type="button" onClick={() => setStatusFilter(opt)}
-                  className={`text-[10px] font-bold px-3 py-1 rounded transition-all ${isSelect ? 'bg-neutral-800 text-white shadow-xs' : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-200/50'}`}
+                  className={`text-[10px] font-bold px-3 py-1.5 rounded-lg transition-all ${isSelect ? 'bg-neutral-900 text-white' : 'bg-transparent text-neutral-500 hover:bg-neutral-100'}`}
                 >{visualLabel}</button>
               );
             })}
           </div>
           <button type="button" onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
-            className="text-xs font-semibold px-3 py-1.5 bg-neutral-50 hover:bg-neutral-100 border border-[#e5e5e5] rounded-lg flex items-center space-x-1.5 text-neutral-700"
+            className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-transparent text-neutral-500 hover:bg-neutral-100 flex items-center gap-1.5 transition-all"
           >
-            <ArrowUpDown className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Release: {sortOrder === 'asc' ? 'Earliest first' : 'Latest first'}</span>
+            <ArrowUpDown className="w-3 h-3" />
+            <span>{sortOrder === 'asc' ? 'Earliest' : 'Latest'}</span>
           </button>
         </div>
       </div>
@@ -67,7 +63,7 @@ export default function MediaTab() {
         </div>
       ) : filteredAssets.length === 0 ? (
         searchQuery || statusFilter !== 'All' ? (
-          <div className="text-center py-12 bg-white border border-[#e5e5e5] rounded-2xl shadow-xs">
+          <div className="text-center py-12 bg-white border border-neutral-100 rounded-2xl shadow-sm">
             <div className="mx-auto w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-3"><FileQuestion className="w-5 h-5" /></div>
             <h3 className="text-xs font-extrabold text-neutral-900 uppercase tracking-wide">No assets match your filters</h3>
             <p className="text-xs text-neutral-500 mt-1 max-w-sm mx-auto">Try adjusting the search or status filter.</p>
@@ -76,7 +72,7 @@ export default function MediaTab() {
             >Clear Filters</button>
           </div>
         ) : (
-          <div className="text-center py-12 bg-white border border-[#e5e5e5] rounded-2xl shadow-xs">
+          <div className="text-center py-12 bg-white border border-neutral-100 rounded-2xl shadow-sm">
             <div className="mx-auto w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-3">
               <Image className="w-6 h-6" />
             </div>
@@ -91,7 +87,7 @@ export default function MediaTab() {
           </div>
         )
       ) : (
-        <div className="space-y-6 pb-20 md:pb-6">
+        <div className="space-y-4 pb-20 md:pb-6">
           {filteredAssets.map(asset => {
             const isEditing = editingAssetId === asset.id;
             return <AssetCard key={asset.id} asset={asset} isEditing={isEditing} />;

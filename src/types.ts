@@ -60,6 +60,7 @@ export interface Asset {
   uploadedByName: string;
   createdAt: string;
   updatedAt: string;
+  campaignId?: string;
 }
 
 export interface ArticleFolder {
@@ -79,4 +80,5 @@ export interface Article {
   preparedBy: string;
   createdAt?: string;
   coverImage?: string;
+  status?: 'Draft' | 'Published';
 }

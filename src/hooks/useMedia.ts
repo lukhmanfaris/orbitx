@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Role, AssetStatus, Asset, User } from '../types';
+
+export type EnrichedAsset = Asset & { postingName?: string; campaignId?: string };
 import { ToastType } from './useToast';
 import { apiGet, apiPost, apiPut, apiDelete, parseJSON } from '../utils/api';
 
@@ -54,6 +56,9 @@ export interface UseMediaReturn {
   deleteAsset: (assetId: string) => void;
   copyCaptionToClipboard: (text: string, assetId: string) => void;
   fetchAssets: (postingId: string) => void;
+  fetchRecentAssets: (companyId: string) => Promise<Asset[]>;
+  fetchAllCompanyAssets: (companyId: string) => Promise<void>;
+  allCompanyAssets: EnrichedAsset[];
   handleRevisionUpload: (file: File, originalAsset: Asset) => void;
 }
 
@@ -76,6 +81,7 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
   const [editSchedule, setEditSchedule] = useState('');
   const [editStatus, setEditStatus] = useState<AssetStatus>(AssetStatus.Drafting);
   const [copiedAssetId, setCopiedAssetId] = useState<string | null>(null);
+  const [allCompanyAssets, setAllCompanyAssets] = useState<EnrichedAsset[]>([]);
 
   const fetchAssets = async (postingId: string) => {
     setLoadingAssets(true);
@@ -84,6 +90,23 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
       setAssets(data);
     } catch (err) { console.error(err); }
     finally { setLoadingAssets(false); }
+  };
+
+  const fetchAllCompanyAssets = async (companyId: string): Promise<void> => {
+    try {
+      const data = await apiGet<EnrichedAsset[]>(`/api/companies/${companyId}/all-assets`);
+      setAllCompanyAssets(data);
+    } catch (err) { console.error(err); }
+  };
+
+  const fetchRecentAssets = async (companyId: string): Promise<Asset[]> => {
+    try {
+      const data = await apiGet<Asset[]>(`/api/companies/${companyId}/assets`);
+      return data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 6);
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
   };
 
   useEffect(() => {
@@ -256,6 +279,9 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
     handleQuickStatusUpdate, triggerEditing, saveEdits, saveAssetField, deleteAsset,
     copyCaptionToClipboard,
     fetchAssets,
+    fetchRecentAssets,
+    fetchAllCompanyAssets,
+    allCompanyAssets,
     handleRevisionUpload,
   };
 }

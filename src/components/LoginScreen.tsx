@@ -1,5 +1,6 @@
 import React from 'react';
-import { Lock, AlertCircle, ChevronRight, Layers, X } from 'lucide-react';
+import { motion } from 'motion/react';
+import { Lock, AlertCircle, ChevronRight, X } from 'lucide-react';
 import { useAppContext } from '../AppContext';
 
 export default function LoginScreen() {
@@ -13,29 +14,40 @@ export default function LoginScreen() {
   } = useAppContext();
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-[#fafafa] min-h-[85vh]">
-      <div className="w-full max-w-md bg-white rounded-2xl border border-[#e5e5e5] shadow-xl overflow-hidden p-8 flex flex-col space-y-6">
+    <div className="flex-1 flex flex-col items-center justify-center p-6 bg-neutral-50 min-h-[85vh]">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+        className="w-full max-w-sm bg-white rounded-2xl border border-neutral-100 shadow-sm p-8 flex flex-col space-y-6 t-slide-up"
+      >
+        {/* Logo / App name */}
         <div>
-          <div className="flex items-center space-x-2 text-neutral-400 text-xs font-mono uppercase tracking-widest mb-4">
-            <Layers className="w-4 h-4 text-emerald-600" />
-            <span>Conglomerate Identity</span>
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 bg-neutral-900 rounded-lg flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs font-bold">O</span>
+            </div>
+            <span className="text-xl font-bold tracking-tight text-neutral-900">OrbitX</span>
           </div>
-          <h2 className="text-2xl font-black tracking-tight leading-tight mb-3 text-neutral-900">
-            System Access Portal
-          </h2>
-          <p className="text-xs text-neutral-500 leading-relaxed">
-            Provide your universal access code to mount your clearance across all subsidiary brand workspaces.
+          <p className="text-sm text-neutral-400 leading-relaxed">
+            Enter your access code to sign in to your workspace.
           </p>
         </div>
 
-        <div>
-          <div className="space-y-3">
+        {/* Access code input */}
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs font-medium text-neutral-500 mb-1.5">Access Code</label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4.5 w-4.5 text-neutral-400" />
+              <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
               <input
                 type="text"
-                className="w-full text-sm pl-10 pr-4 py-2.5 bg-neutral-50 border border-[#d4d4d4] rounded-lg focus:outline-none focus:border-neutral-950 focus:bg-white text-neutral-900 uppercase font-mono placeholder:lowercase"
-                placeholder={`e.g. ECO-WRITE-2`}
+                className={`w-full text-sm pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:bg-white transition-all uppercase font-mono placeholder:lowercase placeholder:font-sans ${
+                  loginError
+                    ? 'bg-red-50 border-red-300 focus:border-red-400'
+                    : 'bg-neutral-50 border-neutral-200 focus:border-neutral-900'
+                }`}
+                placeholder="e.g. ECO-WRITE-2"
                 value={accessCodeInput}
                 onChange={(e) => setAccessCodeInput(e.target.value)}
                 onKeyDown={(e) => {
@@ -43,57 +55,54 @@ export default function LoginScreen() {
                 }}
               />
             </div>
-
-            {loginError && (
-              <p className="text-[10px] text-red-600 font-semibold flex items-center space-x-1">
-                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                <span>{loginError}</span>
-              </p>
-            )}
-
-            <button
-              type="button"
-              onClick={() => handleCodeLogin(accessCodeInput)}
-              className="w-full bg-neutral-900 hover:bg-neutral-800 active:bg-black text-white text-xs font-bold py-2.5 rounded-lg transition-colors flex items-center justify-center space-x-1"
-            >
-              <span>Authenticate Code</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
           </div>
+
+          {loginError && (
+            <p key={loginError} className="text-xs text-red-600 font-medium flex items-center gap-1.5 t-shake">
+              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+              <span>{loginError}</span>
+            </p>
+          )}
+
+          <motion.button
+            type="button"
+            onClick={() => handleCodeLogin(accessCodeInput)}
+            whileTap={{ scale: 0.97 }}
+            className="w-full bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-1.5"
+          >
+            <span>Sign In</span>
+            <ChevronRight className="w-4 h-4" />
+          </motion.button>
         </div>
 
-        <div className="border-t border-[#f5f5f5] pt-4">
-          <span className="block text-[10px] font-bold text-[#737373] uppercase mb-2 font-mono">
+        {/* Saved users */}
+        <div className="border-t border-neutral-100 pt-5">
+          <span className="block text-xs font-bold uppercase tracking-widest text-neutral-400 mb-2">
             Saved on this device
           </span>
-          
+
           <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1 scrollbar-thin">
             {rememberedUsers.length === 0 ? (
-              <p className="text-[10px] text-neutral-400 text-center py-3 font-mono italic">
+              <p className="text-xs text-neutral-400 text-center py-3 italic">
                 No saved profiles on this device.
               </p>
             ) : (
               rememberedUsers.map(user => (
                 <div
                   key={user.id}
-                  className="w-full text-left p-2 rounded bg-neutral-50 hover:bg-[#171717] group flex items-center justify-between text-xs transition-colors border border-neutral-200/50"
+                  className="flex items-center gap-2 bg-white border border-neutral-200 rounded-xl px-3 py-2 hover:border-neutral-400 transition-colors group"
                 >
                   <button
                     type="button"
                     onClick={() => handleCodeLogin(user.accessCode)}
-                    className="flex-1 text-left flex items-center justify-between min-w-0"
+                    className="flex-1 flex items-center gap-2.5 min-w-0 text-left"
                   >
-                    <div>
-                      <strong className="block font-bold text-[11px] text-neutral-800 group-hover:text-white leading-none mb-1">
-                        {user.username}
-                      </strong>
-                      <span className="block text-[9px] text-[#737373] group-hover:text-neutral-300 font-mono tracking-widest uppercase">
-                        {user.role}
+                    <div className="w-6 h-6 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">
+                      <span className="text-[10px] font-bold text-neutral-600">
+                        {user.username.charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-[9px] font-mono tracking-widest bg-white group-hover:bg-neutral-800 border group-hover:border-neutral-600 group-hover:text-white border-[#d4d4d4] text-neutral-600 px-1.5 py-0.5 rounded shadow-xs transition-colors mr-2">
-                      {user.accessCode}
-                    </span>
+                    <span className="text-sm font-medium text-neutral-800 truncate">{user.username}</span>
                   </button>
                   <button
                     type="button"
@@ -101,7 +110,7 @@ export default function LoginScreen() {
                       e.stopPropagation();
                       removeRememberedUser(user.id);
                     }}
-                    className="p-0.5 rounded-full hover:bg-red-100 text-neutral-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0"
+                    className="text-neutral-300 hover:text-neutral-600 transition-colors flex-shrink-0"
                     title="Forget this profile"
                   >
                     <X className="w-3.5 h-3.5" />
@@ -111,17 +120,17 @@ export default function LoginScreen() {
             )}
           </div>
 
-          <div className="mt-3 pt-3 border-t border-neutral-100">
+          <div className="mt-4 text-center">
             <button
               type="button"
               onClick={() => setIsOnboardingOpen(true)}
-              className="w-full text-xs font-bold text-neutral-800 bg-neutral-100 hover:bg-neutral-200 px-3.5 py-2 rounded-lg border border-neutral-200 transition-all flex items-center justify-center space-x-1"
+              className="text-sm text-neutral-400 hover:text-neutral-900 underline underline-offset-2 transition-colors"
             >
-              <span>➕ Provision New Role Account</span>
+              Provision a new account
             </button>
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

@@ -12,7 +12,7 @@ export default function StatusBadge({ status }: StatusBadgeProps) {
 
   return (
     <span
-      className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${classes}`}
+      className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider t-status ${classes}`}
       aria-label={`Asset status: ${status}`}
     >
       {status}

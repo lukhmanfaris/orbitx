@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import {
   Layers, FileBox, ChevronRight,
   Search, Video, Image, Trash2,
@@ -10,6 +11,8 @@ import ArticlesTab from './ArticlesTab';
 import ArticlesOverview from './ArticlesOverview';
 import FullArticleTab from './FullArticleTab';
 import CreatePostingModal from './CreatePostingModal';
+import BrandDashboard from './BrandDashboard';
+import AllAssetsView from './AllAssetsView';
 import { useAppContext } from '../AppContext';
 import { Role } from '../types';
 
@@ -20,6 +23,7 @@ export default function WorkspaceDashboard() {
     selectedPostingId, setSelectedPostingId,
     campaigns, postingFolders,
     selectedArticleFolderId, selectedArticleId, showArticlesOverview,
+    showAllAssets,
     assets,
     draftCount, refineCount, readyCount,
     searchQuery, setSearchQuery,
@@ -34,17 +38,17 @@ export default function WorkspaceDashboard() {
 
   const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
   const selectedPosting = postingFolders.find(p => p.id === selectedPostingId);
+  const campaignPostings = postingFolders.filter(p => p.campaignId === selectedCampaignId);
+  const currentViewKey = selectedArticleId || selectedArticleFolderId || selectedPostingId || (showAllAssets ? 'all-assets' : '') || selectedCampaignId || (showArticlesOverview ? 'articles-overview' : 'lobby');
 
   if (!currentUser || !currentCompany) return null;
-
-  console.log('[ROUTING] selectedArticleId:', selectedArticleId, 'selectedArticleFolderId:', selectedArticleFolderId);
 
   // Article editor — replaces main content area (sidebar stays)
   if (selectedArticleId) {
     return (
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         <FolderSidebar />
-        <section className="flex-1 bg-[#fafafa] flex flex-col overflow-y-auto">
+        <section className="flex-1 bg-[#fafafa] flex flex-col overflow-y-auto t-fade-in">
           <FullArticleTab />
         </section>
       </div>
@@ -56,6 +60,7 @@ export default function WorkspaceDashboard() {
       <FolderSidebar />
 
       <section className="flex-1 bg-[#fafafa] flex flex-col overflow-y-auto">
+        <div key={currentViewKey} className="t-fade-in flex-1 flex flex-col min-h-0">
 
         {/* ── Articles overview ── */}
         {showArticlesOverview && !selectedArticleFolderId ? (
@@ -69,7 +74,7 @@ export default function WorkspaceDashboard() {
         ) : selectedPostingId ? (
           <div className="p-3 md:p-6 flex-1 flex flex-col space-y-6">
             {/* Breadcrumb + status header */}
-            <div className="bg-white border border-[#e5e5e5] rounded-xl p-3 md:p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="bg-white border border-[#e5e5e5] rounded-xl p-3 md:p-4 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div className="space-y-1 max-w-xl">
                 <div className="flex items-center flex-wrap gap-2 text-xs text-neutral-500 font-mono">
                   <button
@@ -169,122 +174,66 @@ export default function WorkspaceDashboard() {
             <MediaTab />
           </div>
 
+        /* ── All Assets grid view ── */
+        ) : showAllAssets ? (
+          <AllAssetsView />
+
         /* ── Campaign view (no posting selected) ── */
         ) : selectedCampaignId ? (
-          <div className="flex-1 flex items-center justify-center p-3 md:p-8">
-            <div className="text-center max-w-md bg-white border border-[#e5e5e5] rounded-2xl p-8 shadow-xs">
-              <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Layers className="w-7 h-7 text-neutral-400" />
-              </div>
-              <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight">No posting folders yet</h3>
-              <p className="text-xs text-neutral-500 leading-relaxed mt-2">
-                This campaign has no posting folders. Create one to start adding assets.
-              </p>
-              <button
-                type="button"
-                onClick={() => setIsCreatePostingModalOpen(true)}
-                className="mt-4 bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs px-5 py-2.5 rounded-lg transition-colors inline-flex items-center gap-2"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Create New Posting
-              </button>
-            </div>
-          </div>
-
-        /* ── Lobby ── */
-        ) : (
-          <div className="flex-1 overflow-y-auto bg-neutral-50/50">
-            <div className="max-w-6xl mx-auto p-3 md:p-6 lg:p-8 space-y-8">
-              <div className="bg-white border border-[#e5e5e5] rounded-2xl p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="space-y-1">
-                  <span className="text-[10px] font-bold font-mono tracking-widest text-neutral-500 uppercase block">
-                    CREATIVE WORKSPACE LOBBY
-                  </span>
-                  <h2 className="text-xl md:text-2xl font-black text-neutral-900 tracking-tight">
-                    Find, View, and Curate your Brand Campaigns
-                  </h2>
-                  <p className="text-xs text-neutral-500 leading-relaxed max-w-2xl font-sans">
-                    Welcome, <span className="font-bold text-neutral-800">{currentUser.username}</span> (Designation: <span className="font-mono text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 bg-neutral-100 text-neutral-700 rounded border border-neutral-200">{currentUser.role}</span>)! This dashboard organizes your subsidiary's active campaigns and posting sub-folders.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 bg-white p-4 border border-[#e5e5e5] rounded-2xl shadow-xs">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-3.5 h-4 w-4 text-neutral-400" />
-                  <input type="text" className="w-full text-xs pl-9 pr-4 py-3 bg-neutral-50 border border-[#d4d4d4] rounded-xl focus:outline-none focus:border-neutral-900 focus:bg-white text-neutral-900" placeholder="Search campaigns by keyword..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-                </div>
-                {searchQuery && (
-                  <div className="flex items-center space-x-2">
-                    <button type="button" onClick={() => setSearchQuery('')} className="text-[10px] font-mono font-bold bg-neutral-100 text-neutral-600 hover:bg-neutral-200 px-3 py-2 rounded-xl border border-neutral-200 transition-colors">
-                      Clear Search
-                    </button>
-                  </div>
+          <div className="flex-1 p-3 md:p-6 overflow-y-auto">
+            <div className="max-w-5xl mx-auto space-y-6">
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold tracking-tight text-neutral-900">{selectedCampaign?.name}</h2>
+                {selectedCampaign?.description && (
+                  <p className="text-sm text-neutral-400">{selectedCampaign.description}</p>
                 )}
               </div>
-
-              {campaigns.length === 0 ? (
-                <div className="text-center py-16 bg-white border border-[#e5e5e5] rounded-2xl shadow-xs">
-                  <FileBox className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-                  <h3 className="text-sm font-extrabold text-neutral-900 uppercase">No active campaigns provisioned</h3>
-                  <p className="text-xs text-neutral-500 mt-1 max-w-sm mx-auto">
-                    Get started by adding your first campaign in the sidebar directory.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {campaigns
-                    .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                    .map(campaign => {
-                      const campaignLower = campaign.name.toLowerCase();
-                      const isVideoChannel = campaignLower.includes('video') || campaignLower.includes('reels') || campaignLower.includes('tiktok') || campaignLower.includes('youtube') || campaignLower.includes('shorts');
-                      const isSocialChannel = campaignLower.includes('instagram') || campaignLower.includes('social') || campaignLower.includes('facebook') || campaignLower.includes('pinterest') || campaignLower.includes('caption');
-
-                      return (
-                        <div key={campaign.id} onClick={() => setSelectedCampaignId(campaign.id)}
-                          className="group bg-white border border-[#e5e5e5] hover:border-neutral-900 rounded-2xl p-4 cursor-pointer transition-all hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] flex flex-col justify-between space-y-4"
-                        >
-                          <div>
-                            <div className="flex items-center justify-between mb-2.5">
-                              <div className="p-2.5 rounded-xl transition-colors bg-neutral-100 text-neutral-800 group-hover:bg-neutral-900 group-hover:text-white">
-                                {isVideoChannel ? <Video className="w-4 h-4" /> : isSocialChannel ? <Image className="w-4 h-4" /> : <FileBox className="w-4 h-4" />}
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                {currentUser.role === Role.TeamLead && (
-                                  <button type="button" onClick={(e) => {
-                                    e.stopPropagation();
-                                    const postingCount = postingFolders.filter(p => p.campaignId === campaign.id).length;
-                                    const assetCount = assets.filter(a => postingFolders.some(p => p.campaignId === campaign.id && p.id === a.postingFolderId)).length;
-                                    if (window.confirm(`Delete campaign '${campaign.name}'?\n\nThis will also delete:\n- ${postingCount} posting folder${postingCount !== 1 ? 's' : ''}\n- ${assetCount} media asset${assetCount !== 1 ? 's' : ''}\n\nThis action cannot be undone.`)) {
-                                      handleDeleteCampaign(campaign.id, true);
-                                    }
-                                  }}
-                                    className="text-neutral-400 hover:text-red-500 transition-colors"
-                                    title="Delete campaign"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                                <span className="text-[10px] font-mono font-bold text-neutral-400">
-                                  {new Date(campaign.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                                </span>
-                              </div>
-                            </div>
-                            <h4 className="text-xs font-black text-neutral-800 group-hover:text-neutral-900 leading-tight tracking-tight transition-all truncate block capitalize">{campaign.name}</h4>
-                            <p className="text-[10px] text-neutral-500 line-clamp-2 mt-1 leading-normal font-sans">{campaign.description || 'Raw digital visual assets campaign.'}</p>
-                          </div>
-                          <div className="pt-3.5 border-t border-neutral-100 flex items-center justify-between text-[11px]">
-                            <span className="text-[9px] font-bold text-neutral-400 font-mono tracking-wider group-hover:text-neutral-900">LAUNCH WORKSPACE</span>
-                            <ChevronRight className="w-4 h-4 text-neutral-400 group-hover:text-neutral-900 group-hover:translate-x-0.5 transition-all" />
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {campaignPostings.map(posting => (
+                  <motion.div
+                    key={posting.id}
+                    className="bg-white rounded-2xl border border-neutral-100 shadow-sm p-5 cursor-pointer flex flex-col gap-3"
+                    onClick={() => setSelectedPostingId(posting.id)}
+                    whileHover={{ y: -2, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}
+                    whileTap={{ scale: 0.99 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  >
+                    <div className="w-12 h-12 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-600 font-bold text-base flex-shrink-0">
+                      {posting.name.substring(0, 2).toUpperCase()}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-semibold tracking-tight text-neutral-900 truncate">{posting.name}</h3>
+                      {posting.description && (
+                        <p className="text-sm text-neutral-400 mt-1 line-clamp-2 leading-relaxed">{posting.description}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-neutral-100 mt-auto">
+                      <span className="text-xs text-neutral-400">Media posting</span>
+                      <ChevronRight className="w-4 h-4 text-neutral-300" />
+                    </div>
+                  </motion.div>
+                ))}
+                <motion.div
+                  className="rounded-2xl p-5 cursor-pointer flex flex-col items-center justify-center min-h-[180px] border-2 border-dashed border-neutral-200 hover:border-neutral-400 transition-colors"
+                  onClick={() => setIsCreatePostingModalOpen(true)}
+                  whileHover={{ y: -2, boxShadow: "0 8px 24px rgba(0,0,0,0.08)" }}
+                  whileTap={{ scale: 0.99 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                >
+                  <div className="w-10 h-10 rounded-xl bg-neutral-100 flex items-center justify-center mb-2">
+                    <Plus className="w-5 h-5 text-neutral-400" />
+                  </div>
+                  <span className="text-sm font-medium text-neutral-400">Create New Posting</span>
+                </motion.div>
+              </div>
             </div>
           </div>
+
+        /* ── Lobby (Brand Dashboard) ── */
+        ) : (
+          <BrandDashboard />
         )}
+        </div>
       </section>
 
       <CreatePostingModal

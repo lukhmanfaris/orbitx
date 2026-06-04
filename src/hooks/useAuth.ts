@@ -107,16 +107,16 @@ export function useAuth(): UseAuthReturn {
   }, []);
 
   useEffect(() => {
-    const restoreSession = () => {
-      if (!currentUser) {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !currentUser) {
         const stored = localStorage.getItem('hub_user');
         if (stored) {
           try { setCurrentUser(JSON.parse(stored)); } catch {}
         }
       }
     };
-    const timer = setInterval(restoreSession, 500);
-    return () => clearInterval(timer);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [currentUser]);
 
   return {

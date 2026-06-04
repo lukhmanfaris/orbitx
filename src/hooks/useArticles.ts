@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Article, ArticleFolder, User } from '../types';
 import { ToastType } from './useToast';
 import { apiGet, apiPost, apiPut, apiDelete } from '../utils/api';
@@ -33,10 +33,11 @@ export interface UseArticlesReturn {
   setArticleError: (v: string) => void;
   articleCoverImage: string;
   setArticleCoverImage: (v: string) => void;
-  handleSaveEditorArticle: () => Promise<void>;
+  handleSaveEditorArticle: (status?: 'Draft' | 'Published') => Promise<void>;
   handleDeleteArticle: (articleId: string) => void;
   fetchArticles: (folderId: string) => void;
   fetchArticleFolders: (companyId: string) => void;
+  fetchRecentArticles: (companyId: string) => Promise<Article[]>;
   handleCreateArticleFolder: (name: string, description: string) => Promise<void>;
   handleDeleteArticleFolder: (id: string) => Promise<void>;
 }
@@ -79,12 +80,35 @@ export function useArticles({ currentUser, currentCompanyId, addToast }: UseArti
     } catch (err) { console.error(err); }
   };
 
+  const fetchRecentArticles = async (companyId: string): Promise<Article[]> => {
+    try {
+      const data = await apiGet<Article[]>(`/api/companies/${companyId}/articles`);
+      return data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 6);
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  };
+
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
     if (currentCompanyId) {
       fetchArticleFolders(currentCompanyId);
     } else {
       setArticleFolders([]);
     }
+
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    setSelectedArticleFolderId('');
+    setSelectedArticleId(null);
+    setShowArticlesOverview(false);
+    localStorage.removeItem('hub_article_folder');
+    localStorage.removeItem('hub_article');
   }, [currentCompanyId]);
 
   useEffect(() => {
@@ -132,7 +156,7 @@ export function useArticles({ currentUser, currentCompanyId, addToast }: UseArti
     setSelectedArticleId(articleId);
   };
 
-  const handleSaveEditorArticle = async () => {
+  const handleSaveEditorArticle = async (status?: 'Draft' | 'Published') => {
     setArticleError('');
     if (!articleTitle.trim()) { setArticleError('Title is required.'); return; }
     if (!articlePreparedBy.trim()) { setArticleError('Author name is required.'); return; }
@@ -143,19 +167,23 @@ export function useArticles({ currentUser, currentCompanyId, addToast }: UseArti
         const created = await apiPost<Article>(`/api/article-folders/${selectedArticleFolderId}/articles`, {
           title: articleTitle, body: articleBody, preparedBy: articlePreparedBy,
           createdAt: articleDate || undefined, coverImage: articleCoverImage || undefined,
+          status: status ?? 'Draft',
         });
         setArticles(prev => [created, ...prev]);
         setSelectedArticleId(created.id);
-        addToast?.('success', 'Article Created', created.title);
+        const toastMsg = status === 'Published' ? 'Article published' : 'Draft saved';
+        addToast?.('success', toastMsg, created.title);
       } catch (err: any) { setArticleError(err.message || 'Failed to create article.'); }
     } else if (selectedArticleId) {
       try {
         const updated = await apiPut<Article>(`/api/articles/${selectedArticleId}`, {
           title: articleTitle, body: articleBody, preparedBy: articlePreparedBy,
           createdAt: articleDate || undefined, coverImage: articleCoverImage || undefined,
+          status: status,
         });
         setArticles(prev => prev.map(a => a.id === selectedArticleId ? updated : a));
-        addToast?.('success', 'Article Saved', updated.title);
+        const toastMsg = status === 'Published' ? 'Article published' : 'Draft saved';
+        addToast?.('success', toastMsg, updated.title);
       } catch (err: any) { setArticleError(err.message || 'Failed to save article.'); }
     }
   };
@@ -208,6 +236,6 @@ export function useArticles({ currentUser, currentCompanyId, addToast }: UseArti
     articleError, setArticleError,
     articleCoverImage, setArticleCoverImage,
     handleSaveEditorArticle, handleDeleteArticle, fetchArticles,
-    fetchArticleFolders, handleCreateArticleFolder, handleDeleteArticleFolder,
+    fetchArticleFolders, fetchRecentArticles, handleCreateArticleFolder, handleDeleteArticleFolder,
   };
 }

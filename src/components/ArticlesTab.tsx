@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'motion/react';
 import { Plus, FileText, Trash2, User, ChevronRight } from 'lucide-react';
 import { Role } from '../types';
 import { useAppContext } from '../AppContext';
@@ -19,7 +20,7 @@ export default function ArticlesTab() {
   return (
     <div className="p-6 flex-1 flex flex-col space-y-6">
       {/* Folder header */}
-      <div className="bg-white border border-neutral-200 rounded-xl p-5 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-white border border-neutral-200 rounded-xl p-4 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-[10px] font-mono text-neutral-400 uppercase tracking-widest mb-1">
             <FileText className="w-3.5 h-3.5" />
@@ -52,13 +53,13 @@ export default function ArticlesTab() {
           {[1, 2].map(i => <SkeletonArticleRow key={i} />)}
         </div>
       ) : articles.length === 0 ? (
-        <div className="text-center py-16 bg-white border border-neutral-200 rounded-2xl shadow-xs">
-          <div className="mx-auto w-12 h-12 rounded-full bg-neutral-50 flex items-center justify-center text-neutral-400 mb-3">
+        <div className="text-center py-16 bg-white border-2 border-dashed border-neutral-200 rounded-2xl">
+          <div className="mx-auto w-12 h-12 rounded-xl bg-neutral-100 flex items-center justify-center text-neutral-400 mb-3">
             <FileText className="w-6 h-6" />
           </div>
-          <h4 className="text-sm font-extrabold text-neutral-900 uppercase tracking-wide">No articles yet</h4>
-          <p className="text-xs text-neutral-500 mt-1 max-w-sm mx-auto leading-relaxed">
-            Create the first article in this folder.
+          <h4 className="text-sm font-semibold tracking-tight text-neutral-900">No articles yet</h4>
+          <p className="text-xs text-neutral-400 mt-1 max-w-sm mx-auto leading-relaxed">
+            Write your first article in this folder.
           </p>
           {(currentUser.role === Role.ContentWriter || currentUser.role === Role.TeamLead) && (
             <button
@@ -77,22 +78,30 @@ export default function ArticlesTab() {
             const plainBody = (article.body || '').replace(/[#*_~`>\[\]\(\)\-]/g, '').trim();
             const previewText = plainBody.substring(0, 80) + (plainBody.length > 80 ? '...' : '');
             return (
-            <div
+            <motion.div
               key={article.id}
               onClick={() => openArticleEditor(article.id)}
-              className="bg-white border border-neutral-200 rounded-xl p-5 shadow-xs cursor-pointer hover:border-neutral-400 hover:shadow-sm transition-all group flex items-start gap-4"
+              className="bg-white border border-neutral-100 rounded-xl p-4 cursor-pointer group flex items-start gap-4"
+              whileHover={{ y: -1, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
+              whileTap={{ scale: 0.995 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
             >
               {article.coverImage && (
-                <img src={article.coverImage} alt="" className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                <img src={article.coverImage} alt="" className="w-14 h-14 rounded-lg object-cover flex-shrink-0 shadow-sm" />
               )}
               <div className="flex-1 min-w-0">
-                <h4 className="text-sm font-bold text-neutral-900 truncate group-hover:text-neutral-700 transition-colors">
-                  {article.title || 'Untitled Article'}
-                </h4>
-                <p className="text-xs text-neutral-500 mt-1 line-clamp-2 leading-relaxed font-sans">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-semibold tracking-tight text-neutral-900 truncate">
+                    {article.title || 'Untitled Article'}
+                  </h4>
+                  <span className={`flex-shrink-0 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider border ${article.status === 'Published' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-neutral-100 text-neutral-500 border-neutral-200'}`}>
+                    {article.status || 'Draft'}
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-400 mt-1 line-clamp-2 leading-relaxed font-sans">
                   {previewText || 'No content yet.'}
                 </p>
-                <div className="flex items-center gap-3 mt-2 text-[10px] text-neutral-400 font-mono">
+                <div className="flex items-center gap-3 mt-2 text-xs text-neutral-400">
                   <span className="flex items-center gap-1">
                     <User className="w-3 h-3" />{article.preparedBy}
                   </span>
@@ -115,7 +124,7 @@ export default function ArticlesTab() {
                   </button>
                 )}
               </div>
-            </div>
+            </motion.div>
             );
           })}
         </div>

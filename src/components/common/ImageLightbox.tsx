@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { motion } from 'motion/react';
 import { X, ZoomIn, ZoomOut, Crop, Maximize2, Smartphone } from 'lucide-react';
 import { socialMediaSizes, platforms, SocialMediaPreset } from '../../socialMediaSizes';
 
@@ -75,10 +76,6 @@ export default function ImageLightbox({ src, alt, onClose }: ImageLightboxProps)
 
   const handleMouseUp = () => { setIsDragging(false); };
 
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) { onClose(); }
-  };
-
   const handleResetZoom = () => {
     setZoom(1);
     setPan({ x: 0, y: 0 });
@@ -93,7 +90,6 @@ export default function ImageLightbox({ src, alt, onClose }: ImageLightboxProps)
     if (!selectedPreset) return {};
     const containerW = containerRef.current?.clientWidth || 1200;
     const containerH = containerRef.current?.clientHeight || 800;
-    const presetAspect = selectedPreset.width / selectedPreset.height;
 
     let frameW: number;
     let frameH: number;
@@ -134,9 +130,6 @@ export default function ImageLightbox({ src, alt, onClose }: ImageLightboxProps)
       };
     }
 
-    const presetAspect = selectedPreset.width / selectedPreset.height;
-    const imgAspect = 1;
-
     if (fitMode === 'fit') {
       return {
         maxWidth: '100%',
@@ -155,83 +148,170 @@ export default function ImageLightbox({ src, alt, onClose }: ImageLightboxProps)
 
   return (
     <div
-      className="fixed inset-0 z-[100] bg-black/80 flex flex-col"
-      onClick={handleBackdropClick}
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center t-modal-active t-backdrop-active"
       onWheel={handleWheel}
     >
-      <div className="flex items-center justify-between px-4 py-2 bg-black/60 backdrop-blur-sm flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center space-x-1 bg-neutral-800 rounded-lg p-1">
-            <button type="button" onClick={handleZoomOut} disabled={zoom <= MIN_ZOOM}
-              className="p-1.5 rounded hover:bg-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors" title="Zoom Out">
+      {/* Backdrop */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Close button — top-right, outside image */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 z-20 bg-white/90 backdrop-blur-sm rounded-full p-2 text-neutral-600 hover:text-neutral-900 transition-colors shadow-sm"
+        title="Close (Esc)"
+      >
+        <X className="w-5 h-5" />
+      </button>
+
+      {/* Image + controls column */}
+      <div className="relative z-10 flex flex-col items-center gap-4 pointer-events-none">
+        {/* Image container */}
+        <div
+          ref={containerRef}
+          className="pointer-events-auto bg-white rounded-2xl overflow-hidden shadow-2xl max-w-[90vw] max-h-[85vh] relative flex items-center justify-center"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onClick={(e) => { if (!selectedPreset && e.target === e.currentTarget) onClose(); }}
+        >
+          {selectedPreset ? (
+            <div className="relative" style={{ width: '90vw', height: '75vh', maxWidth: '1400px', maxHeight: '900px' }}>
+              <div style={getPresetFrameStyle()} className="flex items-center justify-center overflow-hidden">
+                <img
+                  src={src}
+                  alt={alt || 'Asset preview'}
+                  style={getImageContainerStyle()}
+                  className="max-w-full max-h-full"
+                  draggable={false}
+                />
+              </div>
+              <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full flex items-center gap-2 pointer-events-none shadow-sm">
+                <span className="text-xs font-mono font-semibold text-neutral-800">{selectedPreset.width} × {selectedPreset.height}</span>
+                <span className="text-xs text-neutral-400 font-mono">{selectedPreset.platform}</span>
+                <span className={`text-xs font-semibold rounded px-1.5 py-0.5 ${fitMode === 'fill' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700'}`}>
+                  {fitMode === 'fill' ? 'FILL' : 'FIT'}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <img
+              src={src}
+              alt={alt || 'Asset preview'}
+              style={getImageContainerStyle()}
+              className="block max-w-[90vw] max-h-[85vh] select-none"
+              draggable={false}
+            />
+          )}
+        </div>
+
+        {/* Controls pill — floating below image */}
+        <div
+          className="pointer-events-auto bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2 flex items-center gap-3 shadow-sm"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Zoom controls */}
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleZoomOut}
+              disabled={zoom <= MIN_ZOOM}
+              className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed text-neutral-600 transition-colors"
+              title="Zoom Out"
+            >
               <ZoomOut className="w-4 h-4" />
             </button>
-            <button type="button" onClick={handleResetZoom}
-              className="px-2 py-1 text-[11px] font-mono font-bold text-white hover:bg-neutral-700 rounded transition-colors min-w-[48px] text-center">
+            <button
+              type="button"
+              onClick={handleResetZoom}
+              className="px-2 py-1 text-xs font-mono font-semibold text-neutral-700 hover:bg-neutral-100 rounded-lg transition-colors min-w-[44px] text-center"
+            >
               {Math.round(zoom * 100)}%
             </button>
-            <button type="button" onClick={handleZoomIn} disabled={zoom >= MAX_ZOOM}
-              className="p-1.5 rounded hover:bg-neutral-700 disabled:opacity-30 disabled:cursor-not-allowed text-white transition-colors" title="Zoom In">
+            <button
+              type="button"
+              onClick={handleZoomIn}
+              disabled={zoom >= MAX_ZOOM}
+              className="p-1.5 rounded-lg hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed text-neutral-600 transition-colors"
+              title="Zoom In"
+            >
               <ZoomIn className="w-4 h-4" />
             </button>
           </div>
 
+          <div className="w-px h-4 bg-neutral-200" />
+
+          {/* Fit/Fill toggle when preset active */}
           {selectedPreset && (
-            <div className="flex items-center space-x-1 bg-neutral-800 rounded-lg p-1">
-              <button type="button"
-                onClick={() => setFitMode('fit')}
-                className={`px-2.5 py-1 rounded text-[10px] font-bold transition-colors ${fitMode === 'fit' ? 'bg-white text-neutral-900' : 'text-neutral-300 hover:bg-neutral-700'}`}
-              >Fit</button>
-              <button type="button"
-                onClick={() => setFitMode('fill')}
-                className={`px-2.5 py-1 rounded text-[10px] font-bold transition-colors ${fitMode === 'fill' ? 'bg-red-500 text-white' : 'text-neutral-300 hover:bg-neutral-700'}`}
-              >Fill</button>
-            </div>
+            <>
+              <div className="flex items-center gap-1 bg-neutral-100 rounded-lg p-0.5">
+                <button
+                  type="button"
+                  onClick={() => setFitMode('fit')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${fitMode === 'fit' ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'}`}
+                >Fit</button>
+                <button
+                  type="button"
+                  onClick={() => setFitMode('fill')}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${fitMode === 'fill' ? 'bg-red-500 text-white' : 'text-neutral-500 hover:text-neutral-700'}`}
+                >Fill</button>
+              </div>
+              <div className="w-px h-4 bg-neutral-200" />
+            </>
           )}
 
-          <span className="text-[10px] text-neutral-400 font-mono">
-            Scroll to zoom • Drag to pan
-          </span>
-        </div>
-
-        <div className="flex items-center space-x-2">
+          {/* Social media preset selector */}
           <div className="relative">
-            <button type="button"
+            <button
+              type="button"
               onClick={() => setPlatformOpen(platformOpen ? null : '__open')}
-              className={`flex items-center space-x-1.5 rounded-lg px-3 py-1.5 text-[11px] font-bold transition-colors ${selectedPreset ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-neutral-800 hover:bg-neutral-700 text-white'}`}
-              title="Preview image as social media size"
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                selectedPreset
+                  ? 'bg-neutral-900 text-white hover:bg-neutral-800'
+                  : 'bg-neutral-100 text-neutral-700 hover:bg-neutral-200'
+              }`}
+              title="Preview as social media size"
             >
               <Smartphone className="w-3.5 h-3.5" />
               <Crop className="w-3.5 h-3.5" />
-              <span>Preview as:</span>
-              <span className={selectedPreset ? 'text-blue-200' : 'text-neutral-400'}>{selectedPreset ? `${selectedPreset.platform} — ${selectedPreset.name}` : 'Original'}</span>
+              <span>{selectedPreset ? `${selectedPreset.platform} — ${selectedPreset.name}` : 'Preview as'}</span>
               <Maximize2 className="w-3 h-3 opacity-60" />
             </button>
 
             {platformOpen && (
-              <div className="absolute right-0 top-full mt-1 w-64 bg-neutral-900 rounded-xl border border-neutral-700 shadow-2xl max-h-[70vh] overflow-y-auto z-50 scrollbar-thin"
+              <div
+                className="absolute bottom-full mb-2 right-0 w-64 bg-white rounded-2xl border border-neutral-200 shadow-2xl max-h-72 overflow-y-auto z-50 scrollbar-thin"
                 onClick={(e) => e.stopPropagation()}
               >
-                <button type="button"
-                  onClick={() => { setSelectedPreset(null); setPlatformOpen(null); }}
-                  className={`w-full text-left px-3 py-2 text-[11px] font-bold transition-colors border-b border-neutral-800 ${!selectedPreset ? 'bg-emerald-600/20 text-emerald-400' : 'text-neutral-300 hover:bg-neutral-800'}`}
+                <button
+                  type="button"
+                  onClick={() => { handlePresetSelect(null); setPlatformOpen(null); }}
+                  className={`w-full text-left px-4 py-2.5 text-xs font-medium transition-colors border-b border-neutral-100 ${!selectedPreset ? 'text-emerald-600 bg-emerald-50' : 'text-neutral-700 hover:bg-neutral-50'}`}
                 >
                   Original (No Frame)
                 </button>
                 {platforms.map(platform => (
                   <div key={platform}>
-                    <div className="px-3 py-1.5 text-[9px] font-black text-neutral-500 uppercase tracking-wider bg-neutral-800/50 sticky top-0">{platform}</div>
+                    <div className="px-4 py-2 text-[9px] font-bold text-neutral-400 uppercase tracking-widest bg-neutral-50 sticky top-0">{platform}</div>
                     {socialMediaSizes.filter(s => s.platform === platform).map(preset => (
-                      <button key={`${preset.platform}-${preset.name}`} type="button"
-                        onClick={() => { setSelectedPreset(preset); setPlatformOpen(null); setFitMode('fill'); }}
-                        className={`w-full text-left px-3 py-2 text-[11px] transition-colors flex items-center justify-between ${
+                      <button
+                        key={`${preset.platform}-${preset.name}`}
+                        type="button"
+                        onClick={() => { handlePresetSelect(preset); setPlatformOpen(null); setFitMode('fill'); }}
+                        className={`w-full text-left px-4 py-2 text-xs transition-colors flex items-center justify-between ${
                           selectedPreset?.name === preset.name && selectedPreset?.platform === preset.platform
-                            ? 'bg-blue-600/20 text-blue-400'
-                            : 'text-neutral-300 hover:bg-neutral-800'
+                            ? 'bg-neutral-100 text-neutral-900 font-medium'
+                            : 'text-neutral-600 hover:bg-neutral-50'
                         }`}
                       >
                         <span>{preset.name}</span>
-                        <span className="text-[9px] font-mono text-neutral-500">{preset.width}×{preset.height}</span>
+                        <span className="text-[10px] font-mono text-neutral-400">{preset.width}×{preset.height}</span>
                       </button>
                     ))}
                   </div>
@@ -240,51 +320,10 @@ export default function ImageLightbox({ src, alt, onClose }: ImageLightboxProps)
             )}
           </div>
 
-          <button type="button" onClick={onClose}
-            className="p-2 rounded-full hover:bg-neutral-700 text-white transition-colors" title="Close (Esc)">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+          <div className="w-px h-4 bg-neutral-200" />
 
-      <div
-        ref={containerRef}
-        className="flex-1 relative overflow-hidden flex items-center justify-center"
-        style={{ touchAction: 'manipulation' }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        onClick={(e) => { if (!selectedPreset && e.target === e.currentTarget) onClose(); }}
-      >
-        {selectedPreset ? (
-          <div className="relative" style={{ width: '90%', height: '75%', maxWidth: '1400px', maxHeight: '900px' }}>
-            <div style={getPresetFrameStyle()} className="flex items-center justify-center overflow-hidden bg-black/30">
-              <img
-                src={src}
-                alt={alt || 'Asset preview'}
-                style={getImageContainerStyle()}
-                className="max-w-full max-h-full"
-                draggable={false}
-              />
-            </div>
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-sm px-3 py-1 rounded-full flex items-center space-x-2 pointer-events-none">
-              <span className="text-[10px] font-mono font-bold text-white">{selectedPreset.width} × {selectedPreset.height}</span>
-              <span className="text-[10px] text-neutral-400 font-mono">{selectedPreset.platform}</span>
-              <span className={`text-[10px] font-bold rounded px-1.5 py-0.5 ${fitMode === 'fill' ? 'bg-red-500/20 text-red-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                {fitMode === 'fill' ? 'FILL' : 'FIT'}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <img
-            src={src}
-            alt={alt || 'Asset preview'}
-            style={getImageContainerStyle()}
-            className="max-w-[90vw] max-h-[75vh] select-none"
-            draggable={false}
-          />
-        )}
+          <span className="text-xs text-neutral-400">Scroll to zoom · Drag to pan</span>
+        </div>
       </div>
     </div>
   );

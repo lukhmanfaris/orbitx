@@ -339,8 +339,7 @@ async function startServer() {
 
   app.put("/api/articles/:id", (req, res) => {
     const { id } = req.params;
-    const { title, body, preparedBy, createdAt, coverImage } = req.body;
-    console.log('[PUT ARTICLE] id:', id, 'coverImage length:', (coverImage || '').length, 'first60:', (coverImage || '').substring(0, 60));
+    const { title, body, preparedBy, createdAt, coverImage, status } = req.body;
     const db = readDB();
     const article = (db.articles || []).find(art => art.id === id);
     if (!article) { res.status(404).json({ error: "Article not found." }); return; }
@@ -349,6 +348,7 @@ async function startServer() {
     if (preparedBy !== undefined) article.preparedBy = preparedBy.trim();
     if (createdAt !== undefined) article.createdAt = createdAt;
     if (coverImage !== undefined) article.coverImage = coverImage;
+    if (status === 'Draft' || status === 'Published') article.status = status;
     writeDB(db);
     res.json(article);
   });
@@ -418,7 +418,7 @@ async function startServer() {
 
   app.post("/api/article-folders/:folderId/articles", (req, res) => {
     const { folderId } = req.params;
-    const { title, body, preparedBy, createdAt, coverImage } = req.body;
+    const { title, body, preparedBy, createdAt, coverImage, status } = req.body;
     if (!title?.trim() || !preparedBy?.trim()) {
       res.status(400).json({ error: "Article title and 'Prepared By' are required." });
       return;
@@ -432,6 +432,7 @@ async function startServer() {
       preparedBy: preparedBy.trim(),
       createdAt: createdAt || new Date().toISOString().split("T")[0],
       coverImage: coverImage || "",
+      status: status === 'Published' ? 'Published' : 'Draft',
     };
     if (!db.articles) db.articles = [];
     db.articles.unshift(newArticle);
@@ -528,6 +529,20 @@ async function startServer() {
     });
   });
 
+  app.get("/api/companies/:companyId/assets", (req, res) => {
+    const { companyId } = req.params;
+    const db = readDB();
+    const campaignIds = new Set(db.campaigns.filter(c => c.companyId === companyId).map(c => c.id));
+    const postingIds = new Set(db.postingFolders.filter(p => campaignIds.has(p.campaignId)).map(p => p.id));
+    const companyAssets = db.assets.filter(a => postingIds.has(a.postingFolderId));
+    const enrichedAssets = companyAssets.map(asset => {
+      const posting = db.postingFolders.find(p => p.id === asset.postingFolderId);
+      return { ...asset, campaignId: posting?.campaignId || '' };
+    });
+    console.log('ENRICHED ASSET:', enrichedAssets[0]);
+    res.json(enrichedAssets);
+  });
+
   app.get("/api/assets", (req, res) => {
     const db = readDB();
     res.json(db.assets);
@@ -605,6 +620,68 @@ async function startServer() {
     db.assets.splice(assetIndex, 1);
     writeDB(db);
     res.json({ message: "Asset successfully deleted from registry" });
+  });
+
+  app.get("/api/companies/:companyId/all-assets", (req, res) => {
+    const { companyId } = req.params;
+    const db = readDB();
+    const campaignMap = new Map(db.campaigns.filter(c => c.companyId === companyId).map(c => [c.id, c]));
+    const postingMap = new Map(db.postingFolders.filter(p => campaignMap.has(p.campaignId)).map(p => [p.id, p]));
+    const assets = db.assets
+      .filter(a => postingMap.has(a.postingFolderId))
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .map(a => {
+        const posting = postingMap.get(a.postingFolderId);
+        const campaign = posting ? campaignMap.get(posting.campaignId) : undefined;
+        return { ...a, postingName: posting?.name, campaignId: campaign?.id };
+      });
+    res.json(assets);
+  });
+
+  app.get("/api/companies/:companyId/stats", (req, res) => {
+    const { companyId } = req.params;
+    const db = readDB();
+    const companyCampaigns = db.campaigns.filter(c => c.companyId === companyId);
+    const campaignIds = new Set(companyCampaigns.map(c => c.id));
+    const companyPostings = db.postingFolders.filter(p => campaignIds.has(p.campaignId));
+    const postingIds = new Set(companyPostings.map(p => p.id));
+    const companyArticleFolders = (db.articleFolders || []).filter(f => f.companyId === companyId);
+    const articleFolderIds = new Set(companyArticleFolders.map(f => f.id));
+    res.json({
+      campaigns: companyCampaigns.length,
+      postingFolders: companyPostings.length,
+      assets: db.assets.filter(a => postingIds.has(a.postingFolderId)).length,
+      articleFolders: companyArticleFolders.length,
+      articles: (db.articles || []).filter(a => a.articleFolderId && articleFolderIds.has(a.articleFolderId)).length,
+    });
+  });
+
+  app.delete("/api/companies/:id", (req, res) => {
+    const { id } = req.params;
+    const db = readDB();
+    const idx = db.companies.findIndex(c => c.id === id);
+    if (idx === -1) { res.status(404).json({ error: "Company not found" }); return; }
+    db.companies.splice(idx, 1);
+    const companyCampaigns = db.campaigns.filter(c => c.companyId === id);
+    const campaignIds = new Set(companyCampaigns.map(c => c.id));
+    const companyPostings = db.postingFolders.filter(p => campaignIds.has(p.campaignId));
+    const postingIds = new Set(companyPostings.map(p => p.id));
+    const companyArticleFolders = (db.articleFolders || []).filter(f => f.companyId === id);
+    const articleFolderIds = new Set(companyArticleFolders.map(f => f.id));
+    const deletedCounts = {
+      campaigns: companyCampaigns.length,
+      postingFolders: companyPostings.length,
+      assets: db.assets.filter(a => postingIds.has(a.postingFolderId)).length,
+      articleFolders: companyArticleFolders.length,
+      articles: (db.articles || []).filter(a => a.articleFolderId && articleFolderIds.has(a.articleFolderId)).length,
+    };
+    db.campaigns = db.campaigns.filter(c => c.companyId !== id);
+    db.postingFolders = db.postingFolders.filter(p => !campaignIds.has(p.campaignId));
+    db.assets = db.assets.filter(a => !postingIds.has(a.postingFolderId));
+    db.articleFolders = (db.articleFolders || []).filter(f => f.companyId !== id);
+    db.articles = (db.articles || []).filter(a => !a.articleFolderId || !articleFolderIds.has(a.articleFolderId));
+    writeDB(db);
+    res.json(deletedCounts);
   });
 
   if (process.env.NODE_ENV !== "production") {
