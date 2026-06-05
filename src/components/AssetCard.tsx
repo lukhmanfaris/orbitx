@@ -5,6 +5,7 @@ import { AssetStatus, Asset, Role } from '../types';
 import StatusBadge from './common/StatusBadge';
 import ImageLightbox from './common/ImageLightbox';
 import { useAppContext } from '../AppContext';
+import { parseJSON } from '../utils/api';
 
 interface AssetCardProps {
   key?: React.Key;
@@ -99,11 +100,11 @@ function AssetCard({ asset, isEditing }: AssetCardProps) {
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
     try {
-      const presignedRes = await fetch(`/api/upload/presigned-url?filename=${encodeURIComponent(file.name)}&fileType=${encodeURIComponent(file.type)}`);
-      if (!presignedRes.ok) return;
-      const { uploadUrl, publicUrl } = await presignedRes.json();
-      const s3PutRes = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
-      if (!s3PutRes.ok) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!uploadRes.ok) throw new Error('Upload failed');
+      const { publicUrl } = await parseJSON(uploadRes);
       await saveAssetField(asset.id, { s3FileUrl: publicUrl });
       setLightboxOpen(false);
     } catch (err) { console.error('Failed to replace asset media:', err); }

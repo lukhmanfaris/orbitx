@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { ArrowLeft, Save, Image, X, Bold, Italic, Underline, Heading1, Heading2, Heading3, List, ListOrdered, Quote, Link, Minus, AlertCircle, Check, Loader2, Download } from 'lucide-react';
 import { marked } from 'marked';
 import { useAppContext } from '../AppContext';
+import { parseJSON } from '../utils/api';
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -50,11 +51,11 @@ export default function FullArticleTab() {
     if (!file.type.startsWith('image/')) return;
     setUploadingCover(true);
     try {
-      const presignedRes = await fetch(`/api/upload/presigned-url?filename=${encodeURIComponent(file.name)}&fileType=${encodeURIComponent(file.type)}`);
-      if (!presignedRes.ok) throw new Error('Failed to get upload URL');
-      const { uploadUrl, publicUrl, fileType } = await presignedRes.json();
-      const s3PutRes = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': fileType }, body: file });
-      if (!s3PutRes.ok) throw new Error('Upload failed');
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!uploadRes.ok) throw new Error('Failed to upload file');
+      const { publicUrl } = await parseJSON(uploadRes);
       setArticleCoverImage(publicUrl);
     } catch (err) {
       console.error('Cover image upload failed:', err);

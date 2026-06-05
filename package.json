@@ -12,13 +12,17 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1062.0",
+    "@supabase/supabase-js": "^2.107.0",
     "@tailwindcss/vite": "^4.1.14",
+    "@types/multer": "^2.1.0",
     "@vitejs/plugin-react": "^5.0.4",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "lucide-react": "^0.546.0",
     "marked": "^18.0.4",
     "motion": "^12.23.24",
+    "multer": "^2.1.1",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "vite": "^6.2.3"

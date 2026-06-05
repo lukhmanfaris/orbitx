@@ -186,11 +186,11 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const presignedRes = await fetch(`/api/upload/presigned-url?filename=${encodeURIComponent(file.name)}&fileType=${encodeURIComponent(file.type)}`);
-      if (!presignedRes.ok) throw new Error('Failed to get upload URL');
-      const { uploadUrl, publicUrl } = await parseJSON(presignedRes);
-      const s3PutRes = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
-      if (!s3PutRes.ok) throw new Error('Upload failed');
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!uploadRes.ok) throw new Error('Failed to upload file');
+      const { publicUrl } = await parseJSON(uploadRes);
       const res = await fetch(`/api/companies/${companyId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },

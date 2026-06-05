@@ -126,12 +126,12 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
     }
     setIsUploading(true); setUploadError(''); setUploadingFileName(file.name); setUploadProgress(15);
     try {
-      const presignedRes = await fetch(`/api/upload/presigned-url?filename=${encodeURIComponent(file.name)}&fileType=${encodeURIComponent(file.type)}`);
-      if (!presignedRes.ok) throw new Error('Could not acquire direct S3 write credentials.');
-      const { uploadUrl, publicUrl, fileType } = await parseJSON(presignedRes);
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!uploadRes.ok) throw new Error('Failed to upload file.');
+      const { publicUrl, fileType } = await parseJSON(uploadRes);
       setUploadProgress(45);
-      const s3PutRes = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': fileType }, body: file });
-      if (!s3PutRes.ok) throw new Error('Simulated AWS S3 binary cache storage rejected block.');
       setUploadProgress(80);
       const dateToday = new Date().toLocaleDateString('en-CA');
       const newAsset = await apiPost<Asset>('/api/assets', {
@@ -140,7 +140,7 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
       });
       setUploadProgress(100);
       setTimeout(() => { setIsUploading(false); setUploadingFileName(''); setAssets(prev => [newAsset, ...prev]); addToast?.('success', 'Upload Complete', file.name); }, 500);
-    } catch (err: any) { setUploadError(err.message || 'Direct S3 Write failed.'); setIsUploading(false); }
+    } catch (err: any) { setUploadError(err.message || 'Upload failed.'); setIsUploading(false); }
   };
 
   const handleRevisionUpload = async (file: File, originalAsset: Asset) => {
@@ -150,11 +150,11 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
       return;
     }
     try {
-      const presignedRes = await fetch(`/api/upload/presigned-url?filename=${encodeURIComponent(file.name)}&fileType=${encodeURIComponent(file.type)}`);
-      if (!presignedRes.ok) throw new Error('Could not acquire direct S3 write credentials.');
-      const { uploadUrl, publicUrl, fileType } = await parseJSON(presignedRes);
-      const s3PutRes = await fetch(uploadUrl, { method: 'PUT', headers: { 'Content-Type': fileType }, body: file });
-      if (!s3PutRes.ok) throw new Error('S3 upload failed.');
+      const formData = new FormData();
+      formData.append('file', file);
+      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!uploadRes.ok) throw new Error('Failed to upload file.');
+      const { publicUrl, fileType } = await parseJSON(uploadRes);
       const dateToday = new Date().toLocaleDateString('en-CA');
       const newAsset = await apiPost<Asset>('/api/assets', {
         postingFolderId: originalAsset.postingFolderId,
