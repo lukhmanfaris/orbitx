@@ -1,0 +1,27 @@
+import { Router } from 'express';
+import jwt from 'jsonwebtoken';
+import { RouteDeps } from '../types';
+import { toCamel } from '../utils';
+
+export default function authRoutes(deps: RouteDeps): Router {
+  const router = Router();
+  const { supabase } = deps;
+
+  router.post('/login-code', async (req, res) => {
+    const { code } = req.body;
+    if (!code || !code.trim()) return res.status(400).json({ error: "Access Code is required" });
+    const cleanCode = code.trim().toUpperCase();
+    const { data, error } = await supabase.from('users').select('*').eq('access_code', cleanCode).single();
+    if (error || !data) return res.status(401).json({ error: "Invalid Access Code. Check reference directory." });
+    const user = toCamel(data);
+    const { accessCode, ...safeUser } = user as any;
+    const token = jwt.sign(
+      { id: safeUser.id, username: safeUser.username, role: safeUser.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: '7d' }
+    );
+    res.json({ user: safeUser, token });
+  });
+
+  return router;
+}
