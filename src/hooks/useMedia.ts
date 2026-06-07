@@ -84,6 +84,7 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
   const [allCompanyAssets, setAllCompanyAssets] = useState<EnrichedAsset[]>([]);
 
   const fetchAssets = async (postingId: string) => {
+    if (!currentUser) return;
     setLoadingAssets(true);
     try {
       const data = await apiGet<Asset[]>(`/api/postings/${postingId}/assets`);
@@ -93,6 +94,7 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
   };
 
   const fetchAllCompanyAssets = async (companyId: string): Promise<void> => {
+    if (!currentUser) return;
     try {
       const data = await apiGet<EnrichedAsset[]>(`/api/companies/${companyId}/all-assets`);
       setAllCompanyAssets(data);
@@ -100,6 +102,7 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
   };
 
   const fetchRecentAssets = async (companyId: string): Promise<Asset[]> => {
+    if (!currentUser) return [];
     try {
       const data = await apiGet<Asset[]>(`/api/companies/${companyId}/assets`);
       return data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 6);
