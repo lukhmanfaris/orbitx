@@ -7,6 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { authMiddleware } from "./src/server/middleware/auth";
+import { validateEnv, config } from "./src/server/env";
 import { Role, AssetStatus, Company, User, Campaign, PostingFolder, Asset, ArticleFolder, Article } from "./src/types";
 
 dotenv.config();
@@ -60,8 +61,9 @@ function toSnakeCase(obj: any): any {
 }
 
 async function startServer() {
+  validateEnv();
   const app = express();
-  const PORT = 3000;
+  const PORT = config.port;
 
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -250,7 +252,6 @@ async function startServer() {
   app.post("/api/postings/:postingId/articles", async (req, res) => {
     const { postingId } = req.params;
     const { title, body, preparedBy, createdAt, coverImage } = req.body;
-    console.log('[POST ARTICLE] coverImage length:', (coverImage || '').length, 'first60:', (coverImage || '').substring(0, 60));
     if (!title?.trim() || !preparedBy?.trim()) {
       return res.status(400).json({ error: "Article title and 'Prepared By' author name are required." });
     }

@@ -98,7 +98,6 @@ export default function BrandDashboard() {
               ) : (
                 <div className="space-y-3">
                   {recentAssets.map(asset => {
-                    console.log('ASSET:', asset.id, 'campaignId:', asset.campaignId, 'postingFolderId:', asset.postingFolderId);
                     const posting = postingFolders.find(p => p.id === asset.postingFolderId);
                     const campaign = campaigns.find(c => c.id === (asset.campaignId || posting?.campaignId));
                     const isVideo = asset.fileType.includes('video');
