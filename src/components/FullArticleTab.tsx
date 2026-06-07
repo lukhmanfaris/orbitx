@@ -1,10 +1,24 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { ArrowLeft, Save, Image, X, Bold, Italic, Underline, Heading1, Heading2, Heading3, List, ListOrdered, Quote, Link, Minus, AlertCircle, Check, Loader2, Download } from 'lucide-react';
 import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { useAppContext } from '../AppContext';
 import { parseJSON } from '../utils/api';
 
 marked.setOptions({ breaks: true, gfm: true });
+
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+      'p', 'a', 'strong', 'em', 'ul', 'ol', 'li',
+      'blockquote', 'code', 'pre', 'hr', 'br',
+      'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td',
+      'del', 'ins', 'sup', 'sub',
+    ],
+    ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'target', 'rel'],
+  });
+}
 
 export default function FullArticleTab() {
   const {
@@ -125,7 +139,7 @@ export default function FullArticleTab() {
   };
 
   const handleCopyHtml = async () => {
-    await navigator.clipboard.writeText(marked(articleBody || '') as string);
+    await navigator.clipboard.writeText(sanitizeHtml(marked(articleBody || '') as string));
     setCopiedType('html');
     setTimeout(() => setCopiedType(null), 2000);
   };
@@ -299,7 +313,7 @@ export default function FullArticleTab() {
               </div>
               <div
                 className="article-preview text-neutral-800 pt-10"
-                dangerouslySetInnerHTML={{ __html: getPreviewHtml() }}
+                dangerouslySetInnerHTML={{ __html: sanitizeHtml(getPreviewHtml()) }}
               />
             </div>
           ) : (
