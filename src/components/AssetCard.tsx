@@ -5,7 +5,7 @@ import { AssetStatus, Asset, Role } from '../types';
 import StatusBadge from './common/StatusBadge';
 import ImageLightbox from './common/ImageLightbox';
 import { useAppContext } from '../AppContext';
-import { parseJSON } from '../utils/api';
+import { parseJSON, apiUpload } from '../utils/api';
 
 interface AssetCardProps {
   key?: React.Key;
@@ -102,9 +102,7 @@ function AssetCard({ asset, isEditing }: AssetCardProps) {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!uploadRes.ok) throw new Error('Upload failed');
-      const { publicUrl } = await parseJSON(uploadRes);
+      const { publicUrl } = await apiUpload('/api/upload', formData);
       await saveAssetField(asset.id, { s3FileUrl: publicUrl });
       setLightboxOpen(false);
     } catch (err) { console.error('Failed to replace asset media:', err); }

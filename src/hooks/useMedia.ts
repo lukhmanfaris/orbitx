@@ -3,7 +3,7 @@ import { Role, AssetStatus, Asset, User } from '../types';
 
 export type EnrichedAsset = Asset & { postingName?: string; campaignId?: string };
 import { ToastType } from './useToast';
-import { apiGet, apiPost, apiPut, apiDelete, parseJSON } from '../utils/api';
+import { apiGet, apiPost, apiPut, apiDelete, parseJSON, apiUpload } from '../utils/api';
 
 export interface UseMediaParams {
   currentUser: User | null;
@@ -128,9 +128,7 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!uploadRes.ok) throw new Error('Failed to upload file.');
-      const { publicUrl, fileType } = await parseJSON(uploadRes);
+      const { publicUrl, fileType } = await apiUpload('/api/upload', formData);
       setUploadProgress(45);
       setUploadProgress(80);
       const dateToday = new Date().toLocaleDateString('en-CA');
@@ -152,9 +150,7 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!uploadRes.ok) throw new Error('Failed to upload file.');
-      const { publicUrl, fileType } = await parseJSON(uploadRes);
+      const { publicUrl, fileType } = await apiUpload('/api/upload', formData);
       const dateToday = new Date().toLocaleDateString('en-CA');
       const newAsset = await apiPost<Asset>('/api/assets', {
         postingFolderId: originalAsset.postingFolderId,

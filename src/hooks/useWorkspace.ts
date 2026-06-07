@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Role, Company, Campaign, PostingFolder, User } from '../types';
 import { ToastType } from './useToast';
-import { apiGet, apiPost, apiDelete, parseJSON } from '../utils/api';
+import { apiGet, apiPost, apiPut, apiDelete, parseJSON, apiUpload } from '../utils/api';
 
 export interface UseWorkspaceParams {
   currentUser: User | null;
@@ -188,19 +188,10 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!uploadRes.ok) throw new Error('Failed to upload file');
-      const { publicUrl } = await parseJSON(uploadRes);
-      const res = await fetch(`/api/companies/${companyId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ logoUrl: publicUrl })
-      });
-      if (res.ok) {
-        const updated = await parseJSON(res);
-        setAvailableCompanies(prev => prev.map(c => c.id === companyId ? updated : c));
-        if (currentCompany && currentCompany.id === companyId) { setCurrentCompany(updated); }
-      }
+      const { publicUrl } = await apiUpload('/api/upload', formData);
+      const updated = await apiPut<Company>(`/api/companies/${companyId}`, { logoUrl: publicUrl });
+      setAvailableCompanies(prev => prev.map(c => c.id === companyId ? updated : c));
+      if (currentCompany && currentCompany.id === companyId) { setCurrentCompany(updated); }
     } catch (err) { console.error('Failed to update company logo:', err); }
   };
 
