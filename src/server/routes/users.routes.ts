@@ -3,6 +3,8 @@ import { RouteDeps } from '../types';
 import { toCamel, toSnakeCase } from '../utils';
 import { userId as generateUserId } from '../ids';
 import { User } from '../../types';
+import * as v from '../middleware/validators';
+import { handleValidation } from '../middleware/validate';
 
 export default function userRoutes(deps: RouteDeps): Router {
   const router = Router();
@@ -14,7 +16,7 @@ export default function userRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data).map(({ accessCode, ...rest }: any) => rest));
   });
 
-  router.post('/users', async (req, res) => {
+  router.post('/users', v.createUser, handleValidation, async (req, res) => {
     const { username, role, accessCode, password } = req.body;
     if (!username?.trim() || !role || !accessCode?.trim()) {
       return res.status(400).json({ error: "Username, designated position, and access code are required." });
@@ -39,7 +41,7 @@ export default function userRoutes(deps: RouteDeps): Router {
     res.status(201).json(toCamel(data));
   });
 
-  router.put('/users/:id', async (req, res) => {
+  router.put('/users/:id', v.updateUser, handleValidation, async (req, res) => {
     const { id } = req.params;
     const { username, role, accessCode } = req.body;
 

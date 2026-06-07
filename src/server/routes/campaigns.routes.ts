@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { RouteDeps } from '../types';
 import { toCamel, toSnakeCase } from '../utils';
 import { campaignId, postingFolderId } from '../ids';
+import * as v from '../middleware/validators';
+import { handleValidation } from '../middleware/validate';
 
 export default function campaignRoutes(deps: RouteDeps): Router {
   const router = Router();
@@ -14,7 +16,7 @@ export default function campaignRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data));
   });
 
-  router.post('/companies/:companyId/campaigns', async (req, res) => {
+  router.post('/companies/:companyId/campaigns', v.createCampaign, handleValidation, async (req, res) => {
     const { companyId } = req.params;
     const { name, description, projectType } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: "Campaign name is required" });
@@ -83,7 +85,7 @@ export default function campaignRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data));
   });
 
-  router.post('/campaigns/:campaignId/postings', async (req, res) => {
+  router.post('/campaigns/:campaignId/postings', v.createPosting, handleValidation, async (req, res) => {
     const { campaignId } = req.params;
     const { name, description, projectType } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: "Posting folder name is required" });

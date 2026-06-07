@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { RouteDeps } from '../types';
 import { toCamel, toSnakeCase } from '../utils';
 import { articleId, articleFolderId } from '../ids';
+import * as v from '../middleware/validators';
+import { handleValidation } from '../middleware/validate';
 
 export default function articleRoutes(deps: RouteDeps): Router {
   const router = Router();
@@ -26,7 +28,7 @@ export default function articleRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data));
   });
 
-  router.post('/companies/:companyId/article-folders', async (req, res) => {
+  router.post('/companies/:companyId/article-folders', v.createArticleFolder, handleValidation, async (req, res) => {
     const { companyId } = req.params;
     const { name, description } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: "Folder name is required" });
@@ -61,7 +63,7 @@ export default function articleRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data));
   });
 
-  router.post('/article-folders/:folderId/articles', async (req, res) => {
+  router.post('/article-folders/:folderId/articles', v.createArticle, handleValidation, async (req, res) => {
     const { folderId } = req.params;
     const { title, body, preparedBy, createdAt, coverImage, status } = req.body;
     if (!title?.trim() || !preparedBy?.trim()) {
@@ -89,7 +91,7 @@ export default function articleRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data));
   });
 
-  router.post('/postings/:postingId/articles', async (req, res) => {
+  router.post('/postings/:postingId/articles', v.createArticle, handleValidation, async (req, res) => {
     const { postingId } = req.params;
     const { title, body, preparedBy, createdAt, coverImage } = req.body;
     if (!title?.trim() || !preparedBy?.trim()) {
@@ -109,7 +111,7 @@ export default function articleRoutes(deps: RouteDeps): Router {
     res.status(201).json(toCamel(data));
   });
 
-  router.put('/articles/:id', async (req, res) => {
+  router.put('/articles/:id', v.updateArticle, handleValidation, async (req, res) => {
     const { id } = req.params;
     const { title, body, preparedBy, createdAt, coverImage, status } = req.body;
     const { data: existing, error: fError } = await supabase.from('articles').select('id').eq('id', id).single();

@@ -2,12 +2,14 @@ import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { RouteDeps } from '../types';
 import { toCamel } from '../utils';
+import * as v from '../middleware/validators';
+import { handleValidation } from '../middleware/validate';
 
 export default function authRoutes(deps: RouteDeps): Router {
   const router = Router();
   const { supabase } = deps;
 
-  router.post('/login-code', async (req, res) => {
+  router.post('/login-code', v.loginCode, handleValidation, async (req, res) => {
     const { code } = req.body;
     if (!code || !code.trim()) return res.status(400).json({ error: "Access Code is required" });
     const cleanCode = code.trim().toUpperCase();

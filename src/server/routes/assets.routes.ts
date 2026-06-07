@@ -6,6 +6,8 @@ import { RouteDeps } from '../types';
 import { toCamel, toSnakeCase } from '../utils';
 import { assetId } from '../ids';
 import { AssetStatus } from '../../types';
+import * as v from '../middleware/validators';
+import { handleValidation } from '../middleware/validate';
 
 export default function assetRoutes(deps: RouteDeps): Router {
   const router = Router();
@@ -74,7 +76,7 @@ export default function assetRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data));
   });
 
-  router.post('/assets', async (req, res) => {
+  router.post('/assets', v.createAsset, handleValidation, async (req, res) => {
     const { postingFolderId, s3FileUrl, fileType, captionText, artworkComment, revisedCaption, scheduledDate, status, uploadedBy } = req.body;
     if (!postingFolderId || !s3FileUrl) return res.status(400).json({ error: "Posting Folder ID and File URL are required" });
 
@@ -109,7 +111,7 @@ export default function assetRoutes(deps: RouteDeps): Router {
     res.status(201).json(toCamel(data));
   });
 
-  router.put('/assets/:id/status', async (req, res) => {
+  router.put('/assets/:id/status', v.updateAssetStatus, handleValidation, async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     if (!status) return res.status(400).json({ error: "Status value is required" });
@@ -122,7 +124,7 @@ export default function assetRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data));
   });
 
-  router.put('/assets/:id', async (req, res) => {
+  router.put('/assets/:id', v.updateAsset, handleValidation, async (req, res) => {
     const { id } = req.params;
     const { captionText, artworkComment, revisedCaption, scheduledDate, status, postingFolderId } = req.body;
 

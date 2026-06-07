@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { RouteDeps } from '../types';
 import { toCamel, toSnakeCase } from '../utils';
 import { companyId } from '../ids';
+import * as v from '../middleware/validators';
+import { handleValidation } from '../middleware/validate';
 
 export default function companyRoutes(deps: RouteDeps): Router {
   const router = Router();
@@ -13,7 +15,7 @@ export default function companyRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data));
   });
 
-  router.post('/companies', async (req, res) => {
+  router.post('/companies', v.createCompany, handleValidation, async (req, res) => {
     const { name, logoText, logoType, logoData, description, logoUrl } = req.body;
     if (!name?.trim()) {
       return res.status(400).json({ error: "Company name is required" });
@@ -33,7 +35,7 @@ export default function companyRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data));
   });
 
-  router.put('/companies/:companyId', async (req, res) => {
+  router.put('/companies/:companyId', v.updateCompany, handleValidation, async (req, res) => {
     const { companyId } = req.params;
     const { name, description, logoUrl, logoType, logoData, logoText } = req.body;
     const { data: existing, error: fetchError } = await supabase.from('companies').select('id').eq('id', companyId).single();
