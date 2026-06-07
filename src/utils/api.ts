@@ -36,6 +36,11 @@ function handleAuthFailure(res: Response): boolean {
     const hadToken = localStorage.getItem('hub_token');
     localStorage.removeItem('hub_user');
     localStorage.removeItem('hub_token');
+    localStorage.removeItem('hub_company');
+    localStorage.removeItem('hub_campaign');
+    localStorage.removeItem('hub_posting');
+    localStorage.removeItem('hub_article_folder');
+    localStorage.removeItem('hub_article');
     if (hadUser || hadToken) {
       window.location.reload();
     }

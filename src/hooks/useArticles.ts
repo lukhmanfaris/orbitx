@@ -58,6 +58,7 @@ export function useArticles({ currentUser, currentCompanyId, addToast }: UseArti
   const [articleCoverImage, setArticleCoverImage] = useState('');
 
   const fetchArticleFolders = async (companyId: string) => {
+    if (!currentUser) return;
     try {
       const data = await apiGet<ArticleFolder[]>(`/api/companies/${companyId}/article-folders`);
       setArticleFolders(data);
@@ -65,6 +66,7 @@ export function useArticles({ currentUser, currentCompanyId, addToast }: UseArti
   };
 
   const fetchArticles = async (folderId: string) => {
+    if (!currentUser) return;
     setLoadingArticles(true);
     try {
       const data = await apiGet<Article[]>(`/api/article-folders/${folderId}/articles`);
@@ -74,6 +76,7 @@ export function useArticles({ currentUser, currentCompanyId, addToast }: UseArti
   };
 
   const fetchAllArticles = async (companyId: string) => {
+    if (!currentUser) return;
     try {
       const data = await apiGet<Article[]>(`/api/companies/${companyId}/articles`);
       setAllArticles(data);

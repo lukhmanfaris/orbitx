@@ -144,6 +144,7 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
   };
 
   const fetchCampaigns = async (companyId: string) => {
+    if (!currentUser) return;
     try {
       const [data, countsData] = await Promise.all([
         apiGet<Campaign[]>(`/api/companies/${companyId}/campaigns`),
@@ -158,6 +159,7 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
   };
 
   const fetchPostings = async (campaignId: string) => {
+    if (!currentUser) return;
     try {
       const data = await apiGet<PostingFolder[]>(`/api/campaigns/${campaignId}/postings`);
       setPostingFolders(data);
