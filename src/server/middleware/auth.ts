@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-const PUBLIC_PATHS = ['/api/login-code'];
+const PUBLIC_PATHS = ['/login-code'];
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
   console.log(`[AUTH] ${req.method} ${req.path}`);
