@@ -30,6 +30,19 @@ export function useAuth(): UseAuthReturn {
     catch { return []; }
   });
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('orbitx_remembered_users');
+      if (stored) {
+        const users = JSON.parse(stored);
+        if (Array.isArray(users)) {
+          const cleaned = users.map(({ accessCode, access_code, ...rest }: any) => rest);
+          localStorage.setItem('orbitx_remembered_users', JSON.stringify(cleaned));
+        }
+      }
+    } catch {}
+  }, []);
+
   const rememberUserInLocalStorage = (user: User) => {
     try {
       const existing = JSON.parse(localStorage.getItem('orbitx_remembered_users') || '[]') as User[];

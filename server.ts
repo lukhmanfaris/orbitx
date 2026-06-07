@@ -6,6 +6,7 @@ import { createServer as createViteServer } from "vite";
 import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import jwt from 'jsonwebtoken';
 import { authMiddleware } from "./src/server/middleware/auth";
 import { validateEnv, config } from "./src/server/env";
 import { companyId, campaignId, postingFolderId, assetId, articleFolderId, articleId, userId as generateUserId } from './src/server/ids';
@@ -124,7 +125,11 @@ async function startServer() {
     if (error || !data) return res.status(401).json({ error: "Invalid Access Code. Check reference directory." });
     const user = toCamel(data);
     const { accessCode, ...safeUser } = user as any;
-    const token = Buffer.from(JSON.stringify({ ...safeUser, issuedAt: Date.now() })).toString('base64');
+    const token = jwt.sign(
+      { id: safeUser.id, username: safeUser.username, role: safeUser.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: '7d' }
+    );
     res.json({ user: safeUser, token });
   });
 
