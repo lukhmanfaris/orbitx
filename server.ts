@@ -7,6 +7,7 @@ import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
 import { S3Client } from "@aws-sdk/client-s3";
 import { authMiddleware } from "./src/server/middleware/auth";
+import { generalLimiter } from "./src/server/middleware/rateLimiter";
 import { validateEnv, config } from "./src/server/env";
 import { RouteDeps } from "./src/server/types";
 import authRoutes from "./src/server/routes/auth.routes";
@@ -51,6 +52,7 @@ async function startServer() {
 
   const deps: RouteDeps = { supabase, r2, upload, uploadsDir: UPLOADS_DIR };
 
+  app.use('/api', generalLimiter);
   app.use('/api', authMiddleware);
   app.use('/api', authRoutes(deps));
   app.use('/api', companyRoutes(deps));

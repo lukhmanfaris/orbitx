@@ -8,6 +8,7 @@ import { assetId } from '../ids';
 import { AssetStatus } from '../../types';
 import * as v from '../middleware/validators';
 import { handleValidation } from '../middleware/validate';
+import { uploadLimiter } from '../middleware/rateLimiter';
 
 export default function assetRoutes(deps: RouteDeps): Router {
   const router = Router();
@@ -164,7 +165,7 @@ export default function assetRoutes(deps: RouteDeps): Router {
     res.json({ message: "Asset successfully deleted from registry" });
   });
 
-  router.post('/upload', uploadMiddleware.single('file'), async (req, res) => {
+  router.post('/upload', uploadLimiter, uploadMiddleware.single('file'), async (req, res) => {
     try {
       if (!req.file) {
         res.status(400).json({ error: "No file provided" });
