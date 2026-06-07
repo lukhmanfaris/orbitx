@@ -8,6 +8,7 @@ import multer from "multer";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { authMiddleware } from "./src/server/middleware/auth";
 import { validateEnv, config } from "./src/server/env";
+import { companyId, campaignId, postingFolderId, assetId, articleFolderId, articleId, userId as generateUserId } from './src/server/ids';
 import { Role, AssetStatus, Company, User, Campaign, PostingFolder, Asset, ArticleFolder, Article } from "./src/types";
 
 dotenv.config();
@@ -82,7 +83,7 @@ async function startServer() {
       return res.status(400).json({ error: "Company name is required" });
     }
     const newCompany = {
-      id: `co-${Date.now()}`,
+      id: companyId(),
       name: name.trim(),
       logoText: (logoText?.trim() || name.trim().substring(0, 3)).toUpperCase(),
       accentColor: "neutral",
@@ -139,7 +140,7 @@ async function startServer() {
     const { name, description, projectType } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: "Campaign name is required" });
     const newCampaign = {
-      id: `c-${Date.now().toString(36)}`,
+      id: campaignId(),
       companyId,
       name: name.trim(),
       description: description?.trim() || "",
@@ -208,7 +209,7 @@ async function startServer() {
     const { name, description, projectType } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: "Posting folder name is required" });
     const newPosting = {
-      id: `p-${Date.now().toString(36)}`,
+      id: postingFolderId(),
       campaignId,
       name: name.trim(),
       description: description?.trim() || "",
@@ -256,7 +257,7 @@ async function startServer() {
       return res.status(400).json({ error: "Article title and 'Prepared By' author name are required." });
     }
     const newArticle = {
-      id: `art-${Date.now().toString(36)}`,
+      id: articleId(),
       postingFolderId: postingId,
       title: title.trim(),
       body: body || "",
@@ -322,7 +323,7 @@ async function startServer() {
     const { name, description } = req.body;
     if (!name?.trim()) return res.status(400).json({ error: "Folder name is required" });
     const newFolder = {
-      id: `af-${Date.now().toString(36)}`,
+      id: articleFolderId(),
       companyId,
       name: name.trim(),
       description: description?.trim() || "",
@@ -359,7 +360,7 @@ async function startServer() {
       return res.status(400).json({ error: "Article title and 'Prepared By' are required." });
     }
     const newArticle = {
-      id: `art-${Date.now().toString(36)}`,
+      id: articleId(),
       articleFolderId: folderId,
       title: title.trim(),
       body: body || "",
@@ -394,7 +395,7 @@ async function startServer() {
       return res.status(400).json({ error: `Access code '${cleanCode}' is already assigned to ${existingUser.username}.` });
     }
     const newUser = {
-      id: `u-${Date.now().toString(36)}`,
+      id: generateUserId(),
       username: username.trim(),
       role,
       accessCode: cleanCode
@@ -510,7 +511,7 @@ async function startServer() {
     const camelUser = toCamel(user);
 
     const newAsset = {
-      id: `a-${Date.now().toString(36)}`,
+      id: assetId(),
       postingFolderId,
       s3FileUrl,
       fileType: fileType || "",
