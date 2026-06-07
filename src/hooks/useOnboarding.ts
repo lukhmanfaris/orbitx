@@ -67,6 +67,7 @@ export function useOnboarding({ currentUser, addToast }: UseOnboardingParams): U
   const [editingUserError, setEditingUserError] = useState('');
 
   const fetchDirectoryInfo = () => {
+    if (!currentUser) return;
     apiGet<User[]>('/api/users').then(setDirectoryUsers).catch(console.error);
   };
 
