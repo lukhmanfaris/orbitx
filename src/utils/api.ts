@@ -32,9 +32,13 @@ function authHeaders(): Record<string, string> {
 
 function handleAuthFailure(res: Response): boolean {
   if (res.status === 401) {
+    const hadUser = localStorage.getItem('hub_user');
+    const hadToken = localStorage.getItem('hub_token');
     localStorage.removeItem('hub_user');
     localStorage.removeItem('hub_token');
-    window.location.reload();
+    if (hadUser || hadToken) {
+      window.location.reload();
+    }
     return true;
   }
   return false;

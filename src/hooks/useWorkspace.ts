@@ -127,6 +127,7 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
   const selectedPosting = postingFolders.find(p => p.id === selectedPostingId);
 
   const fetchCompanies = async () => {
+    if (!currentUser) return;
     try {
       const data = await apiGet<Company[]>('/api/companies');
       setAvailableCompanies(data);
@@ -359,7 +360,7 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     if (storedSidebar !== null) {
       setSidebarCollapsed(storedSidebar === 'true');
     }
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     if (currentCompany) {
