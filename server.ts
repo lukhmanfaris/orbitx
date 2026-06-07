@@ -6,6 +6,7 @@ import { createServer as createViteServer } from "vite";
 import { createClient } from "@supabase/supabase-js";
 import multer from "multer";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { authMiddleware } from "./src/server/middleware/auth";
 import { Role, AssetStatus, Company, User, Campaign, PostingFolder, Asset, ArticleFolder, Article } from "./src/types";
 
 dotenv.config();
@@ -65,6 +66,7 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
   app.use("/uploads", express.static(UPLOADS_DIR));
+  app.use('/api', authMiddleware);
 
   app.get("/api/companies", async (req, res) => {
     const { data, error } = await supabase.from('companies').select('*');
@@ -117,7 +119,10 @@ async function startServer() {
     const cleanCode = code.trim().toUpperCase();
     const { data, error } = await supabase.from('users').select('*').eq('access_code', cleanCode).single();
     if (error || !data) return res.status(401).json({ error: "Invalid Access Code. Check reference directory." });
-    res.json({ user: toCamel(data) });
+    const user = toCamel(data);
+    const { accessCode, ...safeUser } = user as any;
+    const token = Buffer.from(JSON.stringify({ ...safeUser, issuedAt: Date.now() })).toString('base64');
+    res.json({ user: safeUser, token });
   });
 
   app.get("/api/companies/:companyId/campaigns", async (req, res) => {
@@ -370,7 +375,7 @@ async function startServer() {
   app.get("/api/users", async (req, res) => {
     const { data, error } = await supabase.from('users').select('*');
     if (error) return res.status(500).json({ error: error.message });
-    res.json(toCamel(data));
+    res.json(toCamel(data).map(({ accessCode, ...rest }: any) => rest));
   });
 
   app.post("/api/users", async (req, res) => {

@@ -62,6 +62,7 @@ export function useAuth(): UseAuthReturn {
         const data = await parseJSON(res);
         setCurrentUser(data.user);
         localStorage.setItem('hub_user', JSON.stringify(data.user));
+        if (data.token) { localStorage.setItem('hub_token', data.token); }
         rememberUserInLocalStorage(data.user);
         setAccessCodeInput('');
       } else {
@@ -75,6 +76,7 @@ export function useAuth(): UseAuthReturn {
     setCurrentUser(null);
     setProxyOriginalUser(null);
     localStorage.removeItem('hub_user');
+    localStorage.removeItem('hub_token');
     localStorage.removeItem('hub_company');
     localStorage.removeItem('hub_campaign');
     localStorage.removeItem('hub_posting');
