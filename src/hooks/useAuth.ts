@@ -111,11 +111,17 @@ export function useAuth(): UseAuthReturn {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('hub_user');
+    const storedToken = localStorage.getItem('hub_token');
     if (storedUser) {
-      try {
-        setCurrentUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Failed to parse hub_user, clearing user session');
+      if (storedToken) {
+        try {
+          setCurrentUser(JSON.parse(storedUser));
+        } catch (e) {
+          console.error('Failed to parse hub_user, clearing session');
+          localStorage.removeItem('hub_user');
+          localStorage.removeItem('hub_token');
+        }
+      } else {
         localStorage.removeItem('hub_user');
       }
     }
@@ -125,7 +131,8 @@ export function useAuth(): UseAuthReturn {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && !currentUser) {
         const stored = localStorage.getItem('hub_user');
-        if (stored) {
+        const storedToken = localStorage.getItem('hub_token');
+        if (stored && storedToken) {
           try { setCurrentUser(JSON.parse(stored)); } catch {}
         }
       }
