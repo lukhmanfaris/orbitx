@@ -10,22 +10,20 @@ export default function CompanySelector() {
     availableCompanies,
     currentUser,
     setCurrentCompany,
-    isCreatingCompany,
-    setIsCreatingCompany,
-    companyErrorMsg,
-    setCompanyErrorMsg,
-    newCompanyName,
-    setNewCompanyName,
-    newCompanyDescription,
-    setNewCompanyDescription,
-    newCompanyLogoType,
-    setNewCompanyLogoType,
-    newCompanyLogoData,
-    setNewCompanyLogoData,
     handleCreateCompany,
     handleLogoUpload,
     handleDeleteCompany,
   } = useAppContext();
+
+  const [isCreatingCompany, setIsCreatingCompany] = useState(false);
+  const [companyErrorMsg, setCompanyErrorMsg] = useState('');
+  const [newCompanyName, setNewCompanyName] = useState('');
+  const [newCompanyDescription, setNewCompanyDescription] = useState('');
+  const [newCompanyLogoType, setNewCompanyLogoType] = useState<'upload' | 'icon' | 'none'>('none');
+  const [newCompanyLogoData, setNewCompanyLogoData] = useState('');
+  const [newCompanyLogoUrl, setNewCompanyLogoUrl] = useState('');
+  const [newCompanyLogoText, setNewCompanyLogoText] = useState('');
+  const [newCompanyAccentColor, setNewCompanyAccentColor] = useState<'emerald' | 'indigo' | 'amber'>('indigo');
 
   const [logoTab, setLogoTab] = useState<'upload' | 'icon'>('icon');
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
@@ -73,6 +71,32 @@ export default function CompanySelector() {
       setNewCompanyLogoType('icon');
       setNewCompanyLogoData(iconId);
     }
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCompanyName.trim()) {
+      setCompanyErrorMsg('Company name is required');
+      return;
+    }
+    await handleCreateCompany({
+      name: newCompanyName,
+      description: newCompanyDescription,
+      logoType: newCompanyLogoType,
+      logoData: newCompanyLogoData,
+      logoText: newCompanyLogoText,
+      logoUrl: newCompanyLogoUrl,
+      accentColor: newCompanyAccentColor,
+    });
+    setNewCompanyName('');
+    setNewCompanyDescription('');
+    setNewCompanyLogoText('');
+    setNewCompanyLogoType('none');
+    setNewCompanyLogoData('');
+    setNewCompanyLogoUrl('');
+    setNewCompanyAccentColor('indigo');
+    setCompanyErrorMsg('');
+    setIsCreatingCompany(false);
   };
 
   const renderCompanyLogo = (comp: typeof availableCompanies[0]) => {
@@ -270,7 +294,7 @@ export default function CompanySelector() {
                 </button>
               </div>
 
-              <form onSubmit={handleCreateCompany} className="space-y-4 text-left">
+              <form onSubmit={onSubmit} className="space-y-4 text-left">
                 <div>
                   <label className="block text-[9px] font-bold text-neutral-500 uppercase font-mono tracking-wider mb-1">Company/Brand Name</label>
                   <input

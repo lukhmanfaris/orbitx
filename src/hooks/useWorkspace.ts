@@ -23,32 +23,7 @@ export interface UseWorkspaceReturn {
   setPostingFolders: (f: PostingFolder[]) => void;
   selectedPostingId: string;
   setSelectedPostingId: (id: string) => void;
-  isCreatingCompany: boolean;
-  setIsCreatingCompany: (v: boolean) => void;
-  newCompanyName: string;
-  setNewCompanyName: (v: string) => void;
-  newCompanyLogoText: string;
-  setNewCompanyLogoText: (v: string) => void;
-  newCompanyLogoType: 'upload' | 'icon' | 'none';
-  setNewCompanyLogoType: (v: 'upload' | 'icon' | 'none') => void;
-  newCompanyLogoData: string;
-  setNewCompanyLogoData: (v: string) => void;
-  newCompanyAccentColor: 'emerald' | 'indigo' | 'amber';
-  setNewCompanyAccentColor: (v: 'emerald' | 'indigo' | 'amber') => void;
-  newCompanyDescription: string;
-  setNewCompanyDescription: (v: string) => void;
-  newCompanyLogoUrl: string;
-  setNewCompanyLogoUrl: (v: string) => void;
-  companyErrorMsg: string;
-  setCompanyErrorMsg: (v: string) => void;
-  isCreatingCampaign: boolean;
-  setIsCreatingCampaign: (v: boolean) => void;
-  newCampaignName: string;
-  setNewCampaignName: (v: string) => void;
-  newCampaignDescription: string;
-  setNewCampaignDescription: (v: string) => void;
-  newCampaignProjectType: 'both' | 'media' | 'articles';
-  setNewCampaignProjectType: (v: 'both' | 'media' | 'articles') => void;
+
   isCreatingPosting: boolean;
   setIsCreatingPosting: (v: boolean) => void;
   newPostingName: string;
@@ -67,9 +42,9 @@ export interface UseWorkspaceReturn {
   selectedPosting: PostingFolder | undefined;
   fetchCompanies: () => void;
   fetchDirectoryInfo: () => void;
-  handleCreateCompany: (e: React.FormEvent) => void;
+  handleCreateCompany: (formData: { name: string; description: string; logoType: 'upload' | 'icon' | 'none'; logoData: string; logoText: string; logoUrl: string; accentColor: 'emerald' | 'indigo' | 'amber' }) => void;
   handleLogoUpload: (companyId: string, event: React.ChangeEvent<HTMLInputElement>) => void;
-  handleCreateCampaign: (e: React.FormEvent) => void;
+  handleCreateCampaign: (formData: { name: string; description: string; projectType: 'both' | 'media' | 'articles' }) => void;
   handleDeleteCampaign: (id: string, skipConfirm?: boolean) => void;
   handleCreatePosting: (e: React.FormEvent) => void;
   handleDeletePosting: (id: string) => void;
@@ -93,19 +68,6 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
   const [allCompanyCampaigns, setAllCompanyCampaigns] = useState<Campaign[]>([]);
   const [postingFolders, setPostingFolders] = useState<PostingFolder[]>([]);
   const [selectedPostingId, setSelectedPostingId] = useState<string>('');
-  const [isCreatingCompany, setIsCreatingCompany] = useState(false);
-  const [newCompanyName, setNewCompanyName] = useState('');
-  const [newCompanyLogoText, setNewCompanyLogoText] = useState('');
-  const [newCompanyLogoType, setNewCompanyLogoType] = useState<'upload' | 'icon' | 'none'>('none');
-  const [newCompanyLogoData, setNewCompanyLogoData] = useState('');
-  const [newCompanyAccentColor, setNewCompanyAccentColor] = useState<'emerald' | 'indigo' | 'amber'>('indigo');
-  const [newCompanyDescription, setNewCompanyDescription] = useState('');
-  const [newCompanyLogoUrl, setNewCompanyLogoUrl] = useState('');
-  const [companyErrorMsg, setCompanyErrorMsg] = useState('');
-  const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
-  const [newCampaignName, setNewCampaignName] = useState('');
-  const [newCampaignDescription, setNewCampaignDescription] = useState('');
-  const [newCampaignProjectType, setNewCampaignProjectType] = useState<'both' | 'media' | 'articles'>('both');
   const [isCreatingPosting, setIsCreatingPosting] = useState(false);
   const [newPostingName, setNewPostingName] = useState('');
   const [newPostingDescription, setNewPostingDescription] = useState('');
@@ -166,23 +128,26 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     } catch (err) { console.error(err); }
   };
 
-  const handleCreateCompany = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newCompanyName.trim()) {
-      setCompanyErrorMsg("Company name is required.");
+  const handleCreateCompany = async (formData: {
+    name: string;
+    description: string;
+    logoType: 'upload' | 'icon' | 'none';
+    logoData: string;
+    logoText: string;
+    logoUrl: string;
+    accentColor: 'emerald' | 'indigo' | 'amber';
+  }) => {
+    if (!formData.name.trim()) {
+      addToast?.('error', 'Error', 'Company name is required');
       return;
     }
     try {
-      setCompanyErrorMsg("");
       const data = await apiPost<Company>("/api/companies", {
-        name: newCompanyName, description: newCompanyDescription, logoUrl: newCompanyLogoUrl,
-        logoType: newCompanyLogoType, logoData: newCompanyLogoData
+        name: formData.name, description: formData.description, logoUrl: formData.logoUrl,
+        logoType: formData.logoType, logoData: formData.logoData
       });
       setAvailableCompanies(prev => [...prev, data]);
-      setIsCreatingCompany(false);
-      setNewCompanyName(""); setNewCompanyLogoText(""); setNewCompanyDescription("");
-      setNewCompanyLogoUrl(""); setNewCompanyLogoType('none'); setNewCompanyLogoData('');
-    } catch (err: any) { console.error('Failed to create company:', err); setCompanyErrorMsg(err.message || "Network error trying to create brand workspace."); }
+    } catch (err: any) { console.error('Failed to create company:', err); addToast?.('error', 'Failed', err.message || "Network error trying to create brand workspace."); }
   };
 
   const handleLogoUpload = async (companyId: string, event: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,21 +163,21 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     } catch (err) { console.error('Failed to update company logo:', err); }
   };
 
-  const handleCreateCampaign = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFolderError('');
+  const handleCreateCampaign = async (formData: {
+    name: string;
+    description: string;
+    projectType: 'both' | 'media' | 'articles';
+  }) => {
     if (!currentUser || !currentCompany) return;
     if (currentUser.role !== Role.TeamLead) {
       addToast?.('error', 'Access Denied', 'Only Team Leads can manage campaigns.');
       return;
     }
-    if (!newCampaignName.trim()) { setFolderError('Campaign name is required.'); return; }
+    if (!formData.name.trim()) { addToast?.('error', 'Error', 'Campaign name is required.'); return; }
     try {
       const created = await apiPost<Campaign>(`/api/companies/${currentCompany.id}/campaigns`, {
-        name: newCampaignName, description: newCampaignDescription, projectType: newCampaignProjectType
+        name: formData.name, description: formData.description, projectType: formData.projectType
       });
-      setNewCampaignName(''); setNewCampaignDescription('');
-      setIsCreatingCampaign(false);
       setCampaigns(prev => [...prev, created]);
       setAllCompanyCampaigns(prev => [...prev, created]);
       setPostingFolders([]);
@@ -220,7 +185,7 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
       skipPostingFetchRef.current = true;
       setSelectedCampaignId(created.id);
       addToast?.('success', 'Campaign Created', created.name);
-    } catch (err: any) { console.error('Failed to create campaign:', err); setFolderError(err.message || 'Network error. Please try again.'); addToast?.('error', 'Failed', err.message); }
+    } catch (err: any) { console.error('Failed to create campaign:', err); addToast?.('error', 'Failed', err.message); }
   };
 
   const handleDeleteCampaign = async (campaignId: string, skipConfirm?: boolean) => {
@@ -421,19 +386,6 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     allCompanyCampaigns, setAllCompanyCampaigns,
     postingFolders, setPostingFolders,
     selectedPostingId, setSelectedPostingId,
-    isCreatingCompany, setIsCreatingCompany,
-    newCompanyName, setNewCompanyName,
-    newCompanyLogoText, setNewCompanyLogoText,
-    newCompanyLogoType, setNewCompanyLogoType,
-    newCompanyLogoData, setNewCompanyLogoData,
-    newCompanyAccentColor, setNewCompanyAccentColor,
-    newCompanyDescription, setNewCompanyDescription,
-    newCompanyLogoUrl, setNewCompanyLogoUrl,
-    companyErrorMsg, setCompanyErrorMsg,
-    isCreatingCampaign, setIsCreatingCampaign,
-    newCampaignName, setNewCampaignName,
-    newCampaignDescription, setNewCampaignDescription,
-    newCampaignProjectType, setNewCampaignProjectType,
     isCreatingPosting, setIsCreatingPosting,
     newPostingName, setNewPostingName,
     newPostingDescription, setNewPostingDescription,

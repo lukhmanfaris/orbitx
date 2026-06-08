@@ -6,7 +6,7 @@ import {
 import { AssetStatus } from '../types';
 import { useAppContext } from '../AppContext';
 import SidebarSearch from './sidebar/SidebarSearch';
-import SidebarCampaigns from './sidebar/SidebarCampaigns';
+import SidebarCampaigns, { SidebarCampaignsHandle } from './sidebar/SidebarCampaigns';
 import SidebarArticles from './sidebar/SidebarArticles';
 import SidebarNotifications, { NotificationItem } from './sidebar/SidebarNotifications';
 import SidebarActivity from './sidebar/SidebarActivity';
@@ -23,9 +23,6 @@ export default function FolderSidebar() {
     currentCompany, currentUser,
     campaigns, selectedCampaignId, setSelectedCampaignId,
     postingFolders, selectedPostingId, setSelectedPostingId,
-    isCreatingCampaign, setIsCreatingCampaign,
-    newCampaignName, setNewCampaignName,
-    newCampaignDescription, setNewCampaignDescription,
     isCreatingPosting, setIsCreatingPosting,
     newPostingName, setNewPostingName,
     newPostingDescription, setNewPostingDescription,
@@ -52,6 +49,7 @@ export default function FolderSidebar() {
   const [isMobile, setIsMobile] = useState(false);
   const [sidebarSearch, setSidebarSearch] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const sidebarCampaignsRef = useRef<SidebarCampaignsHandle>(null);
 
   // Effective collapsed state — never collapsed on mobile
   const isCollapsed = sidebarCollapsed && !isMobile;
@@ -324,7 +322,7 @@ export default function FolderSidebar() {
               <motion.div key="expanded-actions" {...blurFade} className="space-y-1.5">
                 <button
                   type="button"
-                  onClick={() => setIsCreatingCampaign(!isCreatingCampaign)}
+                  onClick={() => sidebarCampaignsRef.current?.openCreateCampaign()}
                   className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-neutral-300 text-sm font-medium text-neutral-600 hover:border-neutral-400 hover:bg-neutral-200/50 transition-colors tracking-tight"
                   title="New Campaign"
                   aria-label="Create new campaign"
@@ -350,7 +348,7 @@ export default function FolderSidebar() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setSidebarCollapsed(false); setIsCreatingCampaign(true); }}
+                    onClick={() => { setSidebarCollapsed(false); sidebarCampaignsRef.current?.openCreateCampaign(); }}
                   className="p-2 rounded-lg text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700 transition-colors"
                   title="New Campaign"
                 >
@@ -364,17 +362,12 @@ export default function FolderSidebar() {
         {/* ── Scrollable content ── */}
         <div className="flex-1 overflow-y-auto min-h-0">
           <SidebarCampaigns
+            ref={sidebarCampaignsRef}
             filteredCampaigns={filteredCampaigns}
             postingFolders={postingFolders}
             selectedCampaignId={selectedCampaignId}
             selectedPostingId={selectedPostingId}
             campaignPostingCounts={campaignPostingCounts}
-            isCreatingCampaign={isCreatingCampaign}
-            setIsCreatingCampaign={setIsCreatingCampaign}
-            newCampaignName={newCampaignName}
-            setNewCampaignName={setNewCampaignName}
-            newCampaignDescription={newCampaignDescription}
-            setNewCampaignDescription={setNewCampaignDescription}
             folderError={folderError}
             isCreatingPosting={isCreatingPosting}
             handleCreateCampaign={handleCreateCampaign}

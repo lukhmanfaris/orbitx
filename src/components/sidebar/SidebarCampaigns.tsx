@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileBox, Plus, Trash2, ChevronDown } from 'lucide-react';
 import { Role, Campaign, PostingFolder } from '../../types';
@@ -10,21 +10,19 @@ const blurFade = {
   transition: { duration: 0.2, ease: 'easeOut' },
 } as const;
 
+export interface SidebarCampaignsHandle {
+  openCreateCampaign: () => void;
+}
+
 interface Props {
   filteredCampaigns: Campaign[];
   postingFolders: PostingFolder[];
   selectedCampaignId: string;
   selectedPostingId: string;
   campaignPostingCounts: Record<string, number>;
-  isCreatingCampaign: boolean;
-  setIsCreatingCampaign: (v: boolean) => void;
-  newCampaignName: string;
-  setNewCampaignName: (v: string) => void;
-  newCampaignDescription: string;
-  setNewCampaignDescription: (v: string) => void;
   folderError: string;
   isCreatingPosting: boolean;
-  handleCreateCampaign: (e: React.FormEvent) => void;
+  handleCreateCampaign: (formData: { name: string; description: string; projectType: 'both' | 'media' | 'articles' }) => void;
   handleDeleteCampaign: (id: string) => void;
   handleDeletePosting: (id: string) => void;
   setIsCreatePostingModalOpen: (v: boolean) => void;
@@ -36,16 +34,43 @@ interface Props {
   isSidebarCollapsed: boolean;
 }
 
-export default function SidebarCampaigns({
+const SidebarCampaigns = forwardRef<SidebarCampaignsHandle, Props>(function SidebarCampaigns({
   filteredCampaigns, postingFolders, selectedCampaignId, selectedPostingId,
-  campaignPostingCounts, isCreatingCampaign, setIsCreatingCampaign,
-  newCampaignName, setNewCampaignName, newCampaignDescription, setNewCampaignDescription,
-  folderError, isCreatingPosting, handleCreateCampaign, handleDeleteCampaign, handleDeletePosting,
+  campaignPostingCounts, folderError, isCreatingPosting, handleCreateCampaign,
+  handleDeleteCampaign, handleDeletePosting,
   setIsCreatePostingModalOpen, currentUserRole, searchQuery, onSelectCampaign, onSelectPosting,
   onShowAllAssets, isSidebarCollapsed,
-}: Props) {
+}, ref) {
+  const [isCreatingCampaign, setIsCreatingCampaign] = useState(false);
+  const [newCampaignName, setNewCampaignName] = useState('');
+  const [newCampaignDescription, setNewCampaignDescription] = useState('');
+  const [newCampaignProjectType, setNewCampaignProjectType] = useState<'both' | 'media' | 'articles'>('both');
+  const [campaignFormError, setCampaignFormError] = useState('');
+
+  useImperativeHandle(ref, () => ({
+    openCreateCampaign: () => setIsCreatingCampaign(true),
+  }), []);
+
   const [hoveredCampaignId, setHoveredCampaignId] = useState<string | null>(null);
   const [hoveredPostingId, setHoveredPostingId] = useState<string | null>(null);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCampaignName.trim()) {
+      setCampaignFormError('Campaign name is required.');
+      return;
+    }
+    await handleCreateCampaign({
+      name: newCampaignName,
+      description: newCampaignDescription,
+      projectType: newCampaignProjectType,
+    });
+    setNewCampaignName('');
+    setNewCampaignDescription('');
+    setNewCampaignProjectType('both');
+    setCampaignFormError('');
+    setIsCreatingCampaign(false);
+  };
 
   return (
     <AnimatePresence mode="popLayout" initial={false}>
@@ -100,7 +125,7 @@ export default function SidebarCampaigns({
                 exit={{ height: 0, opacity: 0 }}
                 className="bg-neutral-50 border-b border-neutral-200 overflow-hidden"
               >
-                <form onSubmit={handleCreateCampaign} className="p-3 space-y-2.5">
+                <form onSubmit={onSubmit} className="p-3 space-y-2.5">
                   <input
                     type="text"
                     className="w-full text-xs p-2 bg-white border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-400 focus:ring-1 focus:ring-neutral-200 transition-colors"
@@ -116,7 +141,7 @@ export default function SidebarCampaigns({
                     value={newCampaignDescription}
                     onChange={(e) => setNewCampaignDescription(e.target.value)}
                   />
-                  {folderError && <p className="text-[9px] text-red-600 font-medium">{folderError}</p>}
+                  {campaignFormError && <p className="text-[9px] text-red-600 font-medium">{campaignFormError}</p>}
                   <div className="flex gap-2 pt-1">
                     <button type="submit" className="flex-1 bg-neutral-900 hover:bg-neutral-800 text-white text-[11px] font-medium py-1.5 rounded-lg transition-colors">Create</button>
                     <button type="button" onClick={() => setIsCreatingCampaign(false)} className="bg-white border border-neutral-200 text-neutral-600 text-[11px] px-3 py-1.5 rounded-lg hover:bg-neutral-50 transition-colors">Cancel</button>
@@ -283,4 +308,6 @@ export default function SidebarCampaigns({
       )}
     </AnimatePresence>
   );
-}
+});
+
+export default SidebarCampaigns;
