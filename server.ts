@@ -52,6 +52,10 @@ async function startServer() {
 
   const deps: RouteDeps = { supabase, r2, upload, uploadsDir: UPLOADS_DIR };
 
+  app.get('/health', (_req, res) => {
+    res.json({ status: 'ok', uptime: process.uptime() });
+  });
+
   app.use('/api', generalLimiter);
   app.use('/api', authMiddleware);
   app.use('/api', authRoutes(deps));
