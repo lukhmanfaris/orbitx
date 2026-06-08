@@ -13,7 +13,7 @@ export default function userRoutes(deps: RouteDeps): Router {
   router.get('/users', async (req, res) => {
     const { data, error } = await supabase.from('users').select('*');
     if (error) return res.status(500).json({ error: error.message });
-    res.json(toCamel(data).map(({ accessCode, ...rest }: any) => rest));
+    res.json(toCamel(data));
   });
 
   router.post('/users', v.createUser, handleValidation, async (req, res) => {
