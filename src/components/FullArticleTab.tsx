@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import { ArrowLeft, Save, Image, X, Bold, Italic, Underline, Heading1, Heading2, Heading3, List, ListOrdered, Quote, Link, Minus, AlertCircle, Check, Loader2, Download } from 'lucide-react';
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
@@ -118,17 +118,19 @@ export default function FullArticleTab() {
     }
   };
 
-  const wordCount = articleBody.trim().split(/\s+/).filter(Boolean).length;
-  const charNoSpaceCount = articleBody.replace(/\s/g, '').length;
-  const lineCount = articleBody.split('\n').length;
+  const { wordCount, charNoSpaceCount, lineCount } = useMemo(() => ({
+    wordCount: articleBody.trim().split(/\s+/).filter(Boolean).length,
+    charNoSpaceCount: articleBody.replace(/\s/g, '').length,
+    lineCount: articleBody.split('\n').length,
+  }), [articleBody]);
 
-  const getPreviewHtml = () => {
+  const previewHtml = useMemo(() => {
     try {
-      return marked(articleBody || '') as string;
+      return sanitizeHtml(marked(articleBody || '') as string);
     } catch {
       return '';
     }
-  };
+  }, [articleBody]);
 
   const handleCopyText = async () => {
     await navigator.clipboard.writeText(articleBody);
@@ -137,7 +139,7 @@ export default function FullArticleTab() {
   };
 
   const handleCopyHtml = async () => {
-    await navigator.clipboard.writeText(sanitizeHtml(marked(articleBody || '') as string));
+    await navigator.clipboard.writeText(previewHtml);
     setCopiedType('html');
     setTimeout(() => setCopiedType(null), 2000);
   };
@@ -311,7 +313,7 @@ export default function FullArticleTab() {
               </div>
               <div
                 className="article-preview text-neutral-800 pt-10"
-                dangerouslySetInnerHTML={{ __html: sanitizeHtml(getPreviewHtml()) }}
+                dangerouslySetInnerHTML={{ __html: previewHtml }}
               />
             </div>
           ) : (
