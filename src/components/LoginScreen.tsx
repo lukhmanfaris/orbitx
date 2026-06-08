@@ -126,7 +126,7 @@ export default function LoginScreen() {
               onClick={() => setIsOnboardingOpen(true)}
               className="text-sm text-neutral-400 hover:text-neutral-900 underline underline-offset-2 transition-colors"
             >
-              Provision a new account
+              Check-In New User
             </button>
           </div>
         </div>

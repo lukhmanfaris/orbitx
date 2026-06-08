@@ -244,7 +244,7 @@ export default function OnboardingModal() {
                     onClick={() => handleOnboardMember()}
                     className="w-full bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-medium py-2.5 rounded-xl transition-colors"
                   >
-                    Provision Credentials
+                    Confirm Onboarding
                   </button>
                 </div>
               )}
