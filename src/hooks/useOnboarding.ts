@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Role, User } from '../types';
 import { ToastType } from './useToast';
-import { apiGet, apiPost, apiPut, apiDelete } from '../utils/api';
+import { apiGet, apiPost, apiPut, apiDelete, ApiError, clearSessionAndReload } from '../utils/api';
 
 export interface UseOnboardingParams {
   currentUser: User | null;
@@ -71,7 +71,13 @@ export function useOnboarding({ currentUser, addToast }: UseOnboardingParams): U
       setDirectoryUsers([]);
       return;
     }
-    apiGet<User[]>('/api/users').then(setDirectoryUsers).catch(console.error);
+    apiGet<User[]>('/api/users').then(setDirectoryUsers).catch((err) => {
+      if (err instanceof ApiError && err.status === 401) {
+        clearSessionAndReload();
+      } else {
+        console.error('Failed to fetch directory:', err);
+      }
+    });
   };
 
   useEffect(() => {
@@ -97,7 +103,15 @@ export function useOnboarding({ currentUser, addToast }: UseOnboardingParams): U
       setOnboardName(''); setOnboardRole(Role.Designer); setOnboardAccessCode(''); setOnboardPassword('');
       setOnboardError(''); setOnboardSuccess('');
       addToast?.('success', 'User registered', `${onboardName} has been added as ${onboardRole}`);
-    } catch (err: any) { console.error('Onboarding failed:', err); setOnboardError(err.message || 'Network transmission error.'); addToast?.('error', 'Failed', err.message); }
+    } catch (err: any) {
+      console.error('Onboarding failed:', err);
+      if (err instanceof ApiError && err.status === 401) {
+        clearSessionAndReload();
+        return;
+      }
+      setOnboardError(err.message || 'Network transmission error.');
+      addToast?.('error', 'Failed', err.message);
+    }
   };
 
   const handleSaveMemberEdit = async (userId: string) => {
@@ -112,7 +126,14 @@ export function useOnboarding({ currentUser, addToast }: UseOnboardingParams): U
       if (currentUser && currentUser.id === userId) {
         localStorage.setItem('hub_user', JSON.stringify(updatedUser));
       }
-    } catch (err: any) { console.error('Failed to save member:', err); setEditingUserError(err.message || 'Network transmission error.'); }
+    } catch (err: any) {
+      console.error('Failed to save member:', err);
+      if (err instanceof ApiError && err.status === 401) {
+        clearSessionAndReload();
+        return;
+      }
+      setEditingUserError(err.message || 'Network transmission error.');
+    }
   };
 
   const handleDeleteMember = async (userId: string, password: string): Promise<{ error?: string }> => {
@@ -126,6 +147,10 @@ export function useOnboarding({ currentUser, addToast }: UseOnboardingParams): U
       }
       return {};
     } catch (err: any) {
+      if (err instanceof ApiError && err.status === 401) {
+        clearSessionAndReload();
+        return { error: 'Session expired. Redirecting to login...' };
+      }
       addToast?.('error', 'Failed', err.message || 'Network error.');
       return { error: err.message || 'Network error.' };
     }
