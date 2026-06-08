@@ -278,7 +278,7 @@ export default function OnboardingModal() {
                     .map(user => {
                       const isCurrent = currentUser && currentUser.id === user.id;
                       const isDeleteOpen = deletingUserId === user.id;
-                      const showDeleteBtn = (!currentUser) || (isTeamLead && !proxyOriginalUser && !isCurrent);
+                      const showDeleteBtn = isTeamLead && !proxyOriginalUser && !isCurrent;
 
                       return (
                         <div key={user.id} className="space-y-0">
