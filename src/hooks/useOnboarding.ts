@@ -67,13 +67,11 @@ export function useOnboarding({ currentUser, addToast }: UseOnboardingParams): U
   const [editingUserError, setEditingUserError] = useState('');
 
   const fetchDirectoryInfo = () => {
-    if (!currentUser) {
-      setDirectoryUsers([]);
-      return;
-    }
     apiGet<User[]>('/api/users').then(setDirectoryUsers).catch((err) => {
       if (err instanceof ApiError && err.status === 401) {
-        clearSessionAndReload();
+        if (currentUser) {
+          clearSessionAndReload();
+        }
       } else {
         console.error('Failed to fetch directory:', err);
       }
@@ -81,11 +79,7 @@ export function useOnboarding({ currentUser, addToast }: UseOnboardingParams): U
   };
 
   useEffect(() => {
-    if (currentUser) fetchDirectoryInfo();
-  }, [currentUser]);
-
-  useEffect(() => {
-    if (isOnboardingOpen) fetchDirectoryInfo();
+    fetchDirectoryInfo();
   }, [isOnboardingOpen]);
 
   const triggerAutoCodeGeneration = () => { setOnboardAccessCode(autoGenerateCode(onboardRole)); };

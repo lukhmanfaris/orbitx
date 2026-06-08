@@ -12,7 +12,7 @@ declare global {
 
 const PUBLIC_PATHS: { path: string; methods?: string[] }[] = [
   { path: '/login-code' },
-  { path: '/users', methods: ['POST'] },
+  { path: '/users', methods: ['POST', 'GET'] },
 ];
 
 interface TokenPayload {
