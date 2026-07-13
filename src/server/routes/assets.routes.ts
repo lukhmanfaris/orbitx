@@ -4,6 +4,7 @@ import fs from 'fs';
 import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import { ZipArchive } from 'archiver';
 import { Readable } from 'stream';
+import { finished } from 'stream/promises';
 import { RouteDeps } from '../types';
 import { toCamel, toSnakeCase } from '../utils';
 import { assetId } from '../ids';
@@ -190,7 +191,14 @@ export default function assetRoutes(deps: RouteDeps): Router {
     res.setHeader('Content-Disposition', 'attachment; filename="assets.zip"');
 
     const archive = new ZipArchive({ zlib: { level: 5 } });
-    archive.on('error', (err: Error) => { res.status(500).end(); });
+    archive.on('error', (err: Error) => {
+      console.error('ZIP archive error:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to create ZIP archive' });
+      } else if (!res.writableEnded) {
+        res.destroy(err);
+      }
+    });
     archive.pipe(res);
 
     const r2PublicUrl = process.env.R2_PUBLIC_URL || '';
@@ -211,7 +219,17 @@ export default function assetRoutes(deps: RouteDeps): Router {
       }
     }
 
-    await archive.finalize();
+    try {
+      await archive.finalize();
+      await finished(res);
+    } catch (err) {
+      console.error('ZIP download failed:', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Failed to create ZIP archive' });
+      } else if (!res.writableEnded) {
+        res.destroy(err instanceof Error ? err : undefined);
+      }
+    }
   });
 
   router.delete('/assets/:id', async (req, res) => {
