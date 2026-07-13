@@ -35,8 +35,17 @@ function AssetCard({ asset, isEditing }: AssetCardProps) {
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>('idle');
   const revisionInputRef = useRef<HTMLInputElement>(null);
 
-  const isVideo = asset.fileType?.startsWith('video') || asset.s3FileUrl.endsWith('.mp4') || asset.s3FileUrl.endsWith('.mov');
+  const isEmbed = asset.fileType === 'video/embed' || /youtube\.com|youtu\.be|vimeo\.com/.test(asset.s3FileUrl);
+  const isVideo = !isEmbed && (asset.fileType?.startsWith('video') || asset.s3FileUrl.endsWith('.mp4') || asset.s3FileUrl.endsWith('.mov'));
   const hasImage = asset.s3FileUrl.startsWith('https://') || asset.s3FileUrl.startsWith('/uploads/');
+
+  const getEmbedUrl = (url: string): string => {
+    const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
+    if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+    return url;
+  };
 
   const isDirty =
     localCaption !== (asset.captionText || '') ||
@@ -135,7 +144,15 @@ function AssetCard({ asset, isEditing }: AssetCardProps) {
           <div
             className="w-full h-full overflow-hidden rounded-xl"
           >
-            {isVideo ? (
+            {isEmbed ? (
+              <iframe
+                src={getEmbedUrl(asset.s3FileUrl)}
+                className="w-full h-full"
+                allowFullScreen
+                style={{ border: 0 }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              />
+            ) : isVideo ? (
               <video controls preload="metadata" className="w-full h-full object-contain" src={asset.s3FileUrl} />
             ) : hasImage ? (
               <img
@@ -259,11 +276,13 @@ function AssetCard({ asset, isEditing }: AssetCardProps) {
 
           <div className="flex items-center justify-between flex-shrink-0 pt-2 border-t border-neutral-100 mt-2">
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-neutral-400 font-mono">Index: {asset.id}</span>
+              <span className="text-[10px] text-neutral-400 font-mono">{new Date(asset.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+              {!isEmbed && (
+              <>
               <input
                 type="file"
                 ref={revisionInputRef}
-                accept="image/*"
+                accept="image/*,video/*,.psd"
                 className="hidden"
                 onChange={handleRevisionFile}
               />
@@ -275,19 +294,18 @@ function AssetCard({ asset, isEditing }: AssetCardProps) {
               >
                 <Plus className="w-3 h-3" />Add Revision
               </button>
+              </>
+              )}
+              {!isEmbed && (
               <button
                 type="button"
-                onClick={() => {
-                  const a = document.createElement('a');
-                  a.href = asset.s3FileUrl;
-                  a.download = asset.s3FileUrl.split('/').pop()?.split('?')[0] || 'download';
-                  a.click();
-                }}
+                onClick={() => window.open(`/api/assets/${asset.id}/download`, '_blank')}
                 className="text-[11px] text-neutral-400 hover:text-neutral-900 border border-neutral-100 rounded-lg px-2 py-1 hover:bg-neutral-50 transition-colors flex items-center gap-1"
                 title="Download file"
               >
                 <Download className="w-3.5 h-3.5" />Download
               </button>
+              )}
             </div>
             <button type="button" onClick={() => deleteAsset(asset.id)} className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Delete asset"><Trash2 className="w-4 h-4" /></button>
           </div>

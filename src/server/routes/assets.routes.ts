@@ -1,7 +1,9 @@
 import { Router } from 'express';
 import path from 'path';
 import fs from 'fs';
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import { ZipArchive } from 'archiver';
+import { Readable } from 'stream';
 import { RouteDeps } from '../types';
 import { toCamel, toSnakeCase } from '../utils';
 import { assetId } from '../ids';
@@ -143,6 +145,73 @@ export default function assetRoutes(deps: RouteDeps): Router {
     const { data, error } = await supabase.from('assets').update(toSnakeCase(updates)).eq('id', id).select().single();
     if (error) return res.status(500).json({ error: error.message });
     res.json(toCamel(data));
+  });
+
+  router.get('/assets/:id/download', async (req, res) => {
+    const { id } = req.params;
+    const { data: asset, error } = await supabase.from('assets').select('*').eq('id', id).single();
+    if (error || !asset) return res.status(404).json({ error: 'Asset not found' });
+
+    const url = asset.s3_file_url;
+    if (url.startsWith('/uploads/')) {
+      const filePath = path.join(deps.uploadsDir, url.replace('/uploads/', ''));
+      return res.download(filePath);
+    }
+
+    const r2PublicUrl = process.env.R2_PUBLIC_URL || '';
+    const key = url.replace(`${r2PublicUrl}/`, '');
+    try {
+      const obj = await r2.send(new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: key }));
+      const filename = key.split('/').pop() || 'download';
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      if (obj.ContentType) res.setHeader('Content-Type', obj.ContentType);
+      if (obj.ContentLength) res.setHeader('Content-Length', String(obj.ContentLength));
+      (obj.Body as Readable).pipe(res);
+    } catch (err: any) {
+      console.error('Download failed:', err);
+      res.status(500).json({ error: 'Failed to download file' });
+    }
+  });
+
+  router.post('/assets/download-zip', async (req, res) => {
+    const { assetIds } = req.body;
+    if (!Array.isArray(assetIds) || assetIds.length === 0) {
+      return res.status(400).json({ error: 'At least one asset ID required' });
+    }
+
+    const { data: assets, error } = await supabase.from('assets').select('*').in('id', assetIds);
+    if (error) return res.status(500).json({ error: error.message });
+    if (!assets || assets.length === 0) return res.status(404).json({ error: 'No assets found' });
+
+    const downloadable = assets.filter((a: any) => a.file_type !== 'video/embed');
+    if (downloadable.length === 0) return res.status(400).json({ error: 'No downloadable assets' });
+
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', 'attachment; filename="assets.zip"');
+
+    const archive = new ZipArchive({ zlib: { level: 5 } });
+    archive.on('error', (err: Error) => { res.status(500).end(); });
+    archive.pipe(res);
+
+    const r2PublicUrl = process.env.R2_PUBLIC_URL || '';
+    for (const asset of downloadable) {
+      const url = asset.s3_file_url;
+      try {
+        if (url.startsWith('/uploads/')) {
+          const filePath = path.join(deps.uploadsDir, url.replace('/uploads/', ''));
+          archive.file(filePath, { name: path.basename(filePath) });
+        } else {
+          const key = url.replace(`${r2PublicUrl}/`, '');
+          const obj = await r2.send(new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: key }));
+          const filename = key.split('/').pop() || 'file';
+          archive.append(obj.Body as Readable, { name: filename });
+        }
+      } catch (err) {
+        console.error(`Failed to add asset ${asset.id} to zip:`, err);
+      }
+    }
+
+    await archive.finalize();
   });
 
   router.delete('/assets/:id', async (req, res) => {

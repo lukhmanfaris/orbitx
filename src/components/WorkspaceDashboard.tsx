@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import {
   Layers, FileBox, ChevronRight,
   Search, Video, Image, Trash2,
-  UploadCloud, RefreshCw, AlertCircle, Plus,
+  UploadCloud, RefreshCw, AlertCircle, Plus, Link,
 } from 'lucide-react';
 import FolderSidebar from './FolderSidebar';
 import MediaTab from './MediaTab';
@@ -35,7 +35,11 @@ export default function WorkspaceDashboard() {
     handleCreatePostingFromModal,
     handleS3FileUpload, handleDragOver, handleDragLeave, handleDrop,
     handleDeleteCampaign,
+    handleEmbedUrl,
   } = useAppContext();
+
+  const [embedMode, setEmbedMode] = useState(false);
+  const [embedUrl, setEmbedUrl] = useState('');
 
   const selectedCampaign = campaigns.find(c => c.id === selectedCampaignId);
   const selectedPosting = postingFolders.find(p => p.id === selectedPostingId);
@@ -135,37 +139,67 @@ export default function WorkspaceDashboard() {
               </div>
 
               {currentUser.role !== Role.ContentWriter && (
-                <div
-                  className="flex-1 flex items-center justify-center min-h-[48px] rounded-xl border border-dashed border-neutral-300 px-4 py-3 cursor-pointer hover:border-neutral-500 hover:bg-neutral-50 transition-colors relative"
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
-                  onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-                >
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={(e) => { if (e.target.files && e.target.files.length > 0) { handleS3FileUpload(e.target.files[0]); } }}
-                    className="hidden"
-                    accept="image/*,video/*,.psd"
-                  />
-                  {isUploading ? (
-                    <div className="flex items-center gap-2 text-[10px] font-mono text-neutral-600">
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>{uploadProgress}%</span>
+                <div className="flex-1 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEmbedMode(!embedMode)}
+                    className={`p-2.5 rounded-xl border transition-colors flex-shrink-0 ${embedMode ? 'bg-neutral-900 text-white border-neutral-900' : 'border-neutral-300 text-neutral-500 hover:border-neutral-500 hover:bg-neutral-50'}`}
+                    title={embedMode ? 'Switch to file upload' : 'Embed video URL'}
+                  >
+                    <Link className="w-4 h-4" />
+                  </button>
+                  {embedMode ? (
+                    <div className="flex-1 flex items-center gap-2 min-h-[48px] rounded-xl border border-dashed border-neutral-300 px-4 py-2">
+                      <input
+                        type="url"
+                        value={embedUrl}
+                        onChange={(e) => setEmbedUrl(e.target.value)}
+                        placeholder="Paste YouTube or Vimeo URL..."
+                        className="flex-1 text-xs bg-transparent outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => { if (embedUrl.trim()) { handleEmbedUrl(embedUrl.trim()); setEmbedUrl(''); } }}
+                        disabled={!embedUrl.trim()}
+                        className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-neutral-900 text-white disabled:opacity-40 hover:bg-neutral-800 transition-colors"
+                      >
+                        Embed
+                      </button>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2">
-                      <UploadCloud className="w-4 h-4 text-neutral-500" />
-                      <span className="text-[10px] text-neutral-600">
-                        <span className="font-bold text-neutral-900">Drag & drop</span> or <span className="underline">browse</span> — Images, Videos, raw PSDs &nbsp;
-                        <span className="text-neutral-400">MAX: 150MB</span>
-                      </span>
-                    </div>
-                  )}
-                  {uploadError && (
-                    <div className="absolute bottom-1 left-3 text-[9px] text-red-600 font-semibold flex items-center gap-1">
-                      <AlertCircle className="w-3 h-3 flex-shrink-0" /><span>{uploadError}</span>
+                    <div
+                      className="flex-1 flex items-center justify-center min-h-[48px] rounded-xl border border-dashed border-neutral-300 px-4 py-3 cursor-pointer hover:border-neutral-500 hover:bg-neutral-50 transition-colors relative"
+                      onDragOver={handleDragOver}
+                      onDragLeave={handleDragLeave}
+                      onDrop={handleDrop}
+                      onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                    >
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={(e) => { if (e.target.files && e.target.files.length > 0) { handleS3FileUpload(e.target.files[0]); } }}
+                        className="hidden"
+                        accept="image/*,video/*,.psd"
+                      />
+                      {isUploading ? (
+                        <div className="flex items-center gap-2 text-[10px] font-mono text-neutral-600">
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          <span>{uploadProgress}%</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <UploadCloud className="w-4 h-4 text-neutral-500" />
+                          <span className="text-[10px] text-neutral-600">
+                            <span className="font-bold text-neutral-900">Drag & drop</span> or <span className="underline">browse</span> — Images, Videos, raw PSDs &nbsp;
+                            <span className="text-neutral-400">MAX: 150MB</span>
+                          </span>
+                        </div>
+                      )}
+                      {uploadError && (
+                        <div className="absolute bottom-1 left-3 text-[9px] text-red-600 font-semibold flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 flex-shrink-0" /><span>{uploadError}</span>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

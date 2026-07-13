@@ -60,6 +60,9 @@ export interface UseMediaReturn {
   fetchAllCompanyAssets: (companyId: string) => Promise<void>;
   allCompanyAssets: EnrichedAsset[];
   handleRevisionUpload: (file: File, originalAsset: Asset) => void;
+  handleEmbedUrl: (url: string) => void;
+  handleDownloadAll: (assetIds: string[]) => void;
+  isDownloadingZip: boolean;
 }
 
 export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaParams): UseMediaReturn {
@@ -169,6 +172,52 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
       setAssets(prev => [newAsset, ...prev]);
       addToast?.('success', 'Revision Uploaded', file.name);
     } catch (err: any) { addToast?.('error', 'Upload Failed', err.message || 'Revision upload failed.'); }
+  };
+
+  const handleEmbedUrl = async (url: string) => {
+    if (!selectedPostingId) { setUploadError('Select a posting folder as target.'); return; }
+    if (!currentUser) return;
+    if (currentUser.role === Role.ContentWriter) {
+      addToast?.('error', 'Access Denied', 'Content Writers cannot upload media files.');
+      return;
+    }
+    if (!/youtube\.com|youtu\.be|vimeo\.com/.test(url)) {
+      addToast?.('error', 'Invalid URL', 'Only YouTube and Vimeo URLs are supported.');
+      return;
+    }
+    try {
+      const dateToday = new Date().toLocaleDateString('en-CA');
+      const newAsset = await apiPost<Asset>('/api/assets', {
+        postingFolderId: selectedPostingId, s3FileUrl: url, fileType: 'video/embed',
+        captionText: '', artworkComment: '', revisedCaption: '', scheduledDate: dateToday, status: AssetStatus.Drafting, uploadedBy: currentUser.id
+      });
+      setAssets(prev => [newAsset, ...prev]);
+      addToast?.('success', 'Video Embedded', 'Video link added successfully.');
+    } catch (err: any) { addToast?.('error', 'Embed Failed', err.message || 'Failed to embed video.'); }
+  };
+
+  const [isDownloadingZip, setIsDownloadingZip] = useState(false);
+
+  const handleDownloadAll = async (assetIds: string[]) => {
+    if (assetIds.length === 0) return;
+    setIsDownloadingZip(true);
+    try {
+      const token = localStorage.getItem('hub_token');
+      const res = await fetch('/api/assets/download-zip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ assetIds }),
+      });
+      if (!res.ok) throw new Error('Download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'assets.zip';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) { addToast?.('error', 'Download Failed', err.message || 'Failed to download ZIP.'); }
+    finally { setIsDownloadingZip(false); }
   };
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setIsDragOver(true); };
@@ -282,5 +331,8 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
     fetchAllCompanyAssets,
     allCompanyAssets,
     handleRevisionUpload,
+    handleEmbedUrl,
+    handleDownloadAll,
+    isDownloadingZip,
   };
 }

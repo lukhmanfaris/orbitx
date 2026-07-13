@@ -1,7 +1,7 @@
 import React from 'react';
 import {
   RefreshCw,
-  Search, ArrowUpDown, FileQuestion, Image, Upload, Plus,
+  Search, ArrowUpDown, FileQuestion, Image, Upload, Plus, Archive,
 } from 'lucide-react';
 import { Role, AssetStatus } from '../types';
 import AssetCard from './AssetCard';
@@ -19,6 +19,8 @@ export default function MediaTab() {
     editingAssetId,
     fileInputRef,
     isCreatePostingModalOpen, setIsCreatePostingModalOpen,
+    handleDownloadAll,
+    isDownloadingZip,
   } = useAppContext();
 
   if (!currentUser) return null;
@@ -54,6 +56,18 @@ export default function MediaTab() {
             <ArrowUpDown className="w-3 h-3" />
             <span>{sortOrder === 'asc' ? 'Earliest' : 'Latest'}</span>
           </button>
+          {filteredAssets.filter(a => a.fileType !== 'video/embed').length > 0 && (
+            <button
+              type="button"
+              onClick={() => handleDownloadAll(filteredAssets.filter(a => a.fileType !== 'video/embed').map(a => a.id))}
+              disabled={isDownloadingZip}
+              className="text-[10px] font-bold px-3 py-1.5 rounded-lg bg-transparent text-neutral-500 hover:bg-neutral-100 flex items-center gap-1.5 transition-all disabled:opacity-40"
+              title="Download all assets as ZIP"
+            >
+              {isDownloadingZip ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Archive className="w-3 h-3" />}
+              <span>{isDownloadingZip ? 'Zipping...' : 'Download All'}</span>
+            </button>
+          )}
         </div>
       </div>
 
