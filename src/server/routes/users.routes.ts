@@ -14,7 +14,7 @@ export default function userRoutes(deps: RouteDeps): Router {
   const { supabase } = deps;
 
   router.get('/login-directory', async (_req, res) => {
-    const { data, error } = await supabase.from('users').select('id, username, role');
+    const { data, error } = await supabase.from('users').select('id, username');
     if (error) return res.status(500).json({ error: 'Failed to load directory.' });
     res.json(toCamel(data));
   });

@@ -67,7 +67,7 @@ export function useOnboarding({ currentUser, addToast }: UseOnboardingParams): U
   const [editingUserError, setEditingUserError] = useState('');
 
   const fetchDirectoryInfo = () => {
-    apiGet<User[]>('/api/login-directory').then(setDirectoryUsers).catch((err) => {
+    apiGet<User[]>('/api/users').then(setDirectoryUsers).catch((err) => {
       if (err instanceof ApiError && err.status === 401) {
         if (currentUser) {
           clearSessionAndReload();
