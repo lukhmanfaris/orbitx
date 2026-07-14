@@ -10,9 +10,9 @@ declare global {
   }
 }
 
-const PUBLIC_PATHS: { path: string; methods?: string[] }[] = [
-  { path: '/login-code' },
-  { path: '/users', methods: ['POST', 'GET'] },
+const PUBLIC_PATHS: { path: string; methods?: string[]; prefix?: boolean }[] = [
+  { path: '/login-', prefix: true },
+  { path: '/users', methods: ['POST'] },
 ];
 
 interface TokenPayload {
@@ -25,7 +25,8 @@ interface TokenPayload {
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const isPublic = PUBLIC_PATHS.some(p => {
-    if (req.path !== p.path) return false;
+    const pathMatch = p.prefix ? req.path.startsWith(p.path) : req.path === p.path;
+    if (!pathMatch) return false;
     if (p.methods && !p.methods.includes(req.method)) return false;
     return true;
   });

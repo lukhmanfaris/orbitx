@@ -151,6 +151,7 @@ export default function OnboardingModal() {
                         Generate
                       </button>
                     </div>
+                    <p className="text-xs text-neutral-400 mt-1">Leave blank to keep current code.</p>
                   </div>
 
                   <div className="flex gap-2 pt-1">
@@ -321,7 +322,7 @@ export default function OnboardingModal() {
                                   setEditingUserId(user.id);
                                   setEditingUserName(user.username);
                                   setEditingUserRole(user.role);
-                                  setEditingUserCode(user.accessCode);
+                                  setEditingUserCode('');
                                 }}
                                 className="text-xs font-medium text-neutral-400 hover:text-neutral-900 transition-colors"
                               >

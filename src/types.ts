@@ -19,7 +19,7 @@ export interface User {
   id: string;
   username: string;
   role: Role;
-  accessCode: string;
+  accessCode?: string;
 }
 
 export enum AssetStatus {

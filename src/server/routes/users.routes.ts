@@ -5,18 +5,27 @@ import { userId as generateUserId } from '../ids';
 import { User } from '../../types';
 import * as v from '../middleware/validators';
 import { handleValidation } from '../middleware/validate';
+import { loginLimiter } from '../middleware/rateLimiter';
+
+const stripAccessCode = ({ accessCode, ...rest }: any) => rest;
 
 export default function userRoutes(deps: RouteDeps): Router {
   const router = Router();
   const { supabase } = deps;
 
-  router.get('/users', async (req, res) => {
-    const { data, error } = await supabase.from('users').select('*');
-    if (error) return res.status(500).json({ error: error.message });
+  router.get('/login-directory', async (_req, res) => {
+    const { data, error } = await supabase.from('users').select('id, username, role');
+    if (error) return res.status(500).json({ error: 'Failed to load directory.' });
     res.json(toCamel(data));
   });
 
-  router.post('/users', v.createUser, handleValidation, async (req, res) => {
+  router.get('/users', async (req, res) => {
+    const { data, error } = await supabase.from('users').select('*');
+    if (error) return res.status(500).json({ error: error.message });
+    res.json(toCamel(data).map(stripAccessCode));
+  });
+
+  router.post('/users', loginLimiter, v.createUser, handleValidation, async (req, res) => {
     const { username, role, accessCode, password } = req.body;
     if (!username?.trim() || !role || !accessCode?.trim()) {
       return res.status(400).json({ error: "Username, designated position, and access code are required." });
@@ -38,7 +47,7 @@ export default function userRoutes(deps: RouteDeps): Router {
     };
     const { data, error } = await supabase.from('users').insert([toSnakeCase(newUser)]).select().single();
     if (error) return res.status(500).json({ error: error.message });
-    res.status(201).json(toCamel(data));
+    res.status(201).json(stripAccessCode(toCamel(data)));
   });
 
   router.put('/users/:id', v.updateUser, handleValidation, async (req, res) => {
@@ -51,7 +60,7 @@ export default function userRoutes(deps: RouteDeps): Router {
     const updates: Record<string, any> = {};
     if (username !== undefined) updates.username = username.trim();
     if (role !== undefined) updates.role = role;
-    if (accessCode !== undefined) {
+    if (accessCode !== undefined && accessCode) {
       const cleanCode = accessCode.trim().toUpperCase();
       const { data: existing } = await supabase.from('users').select('id').eq('access_code', cleanCode).neq('id', id).single();
       if (existing) return res.status(400).json({ error: `Access code '${cleanCode}' belongs to another user.` });
@@ -60,7 +69,7 @@ export default function userRoutes(deps: RouteDeps): Router {
 
     const { data, error } = await supabase.from('users').update(toSnakeCase(updates)).eq('id', id).select().single();
     if (error) return res.status(500).json({ error: error.message });
-    res.json(toCamel(data));
+    res.json(stripAccessCode(toCamel(data)));
   });
 
   router.delete('/users/:id', async (req, res) => {

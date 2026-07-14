@@ -67,7 +67,7 @@ export function useOnboarding({ currentUser, addToast }: UseOnboardingParams): U
   const [editingUserError, setEditingUserError] = useState('');
 
   const fetchDirectoryInfo = () => {
-    apiGet<User[]>('/api/users').then(setDirectoryUsers).catch((err) => {
+    apiGet<User[]>('/api/login-directory').then(setDirectoryUsers).catch((err) => {
       if (err instanceof ApiError && err.status === 401) {
         if (currentUser) {
           clearSessionAndReload();
@@ -111,14 +111,14 @@ export function useOnboarding({ currentUser, addToast }: UseOnboardingParams): U
   const handleSaveMemberEdit = async (userId: string) => {
     setEditingUserError('');
     if (!editingUserName.trim()) { setEditingUserError('Name is required.'); return; }
-    if (!editingUserCode.trim()) { setEditingUserError('Access code is required.'); return; }
     try {
       const updatedUser = await apiPut<User>(`/api/users/${userId}`, { username: editingUserName, role: editingUserRole, accessCode: editingUserCode });
       setDirectoryUsers(prev => prev.map(u => u.id === userId ? updatedUser : u));
       setEditingUserId(null);
       addToast?.('success', 'Member Updated', `${editingUserName}'s profile has been saved.`);
       if (currentUser && currentUser.id === userId) {
-        localStorage.setItem('hub_user', JSON.stringify(updatedUser));
+        const { accessCode, ...safeUser } = updatedUser as any;
+        localStorage.setItem('hub_user', JSON.stringify(safeUser));
       }
     } catch (err: any) {
       console.error('Failed to save member:', err);

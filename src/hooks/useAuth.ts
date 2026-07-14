@@ -32,9 +32,10 @@ export function useAuth(): UseAuthReturn {
 
   const rememberUserInLocalStorage = (user: User) => {
     try {
+      const { accessCode, ...safeUser } = user as any;
       const existing = JSON.parse(localStorage.getItem('orbitx_remembered_users') || '[]') as User[];
       const filtered = existing.filter(u => u.id !== user.id);
-      filtered.unshift(user);
+      filtered.unshift(safeUser);
       localStorage.setItem('orbitx_remembered_users', JSON.stringify(filtered));
       setRememberedUsers(filtered);
     } catch (e) { /* ignore */ }
@@ -60,10 +61,11 @@ export function useAuth(): UseAuthReturn {
       });
       if (res.ok) {
         const data = await parseJSON(res);
-        setCurrentUser(data.user);
-        localStorage.setItem('hub_user', JSON.stringify(data.user));
+        const { accessCode, ...safeUser } = data.user as any;
+        setCurrentUser(safeUser);
+        localStorage.setItem('hub_user', JSON.stringify(safeUser));
         if (data.token) { localStorage.setItem('hub_token', data.token); }
-        rememberUserInLocalStorage(data.user);
+        rememberUserInLocalStorage(safeUser);
         setAccessCodeInput('');
       } else {
         const err = await parseJSON(res);
@@ -97,12 +99,33 @@ export function useAuth(): UseAuthReturn {
   };
 
   useEffect(() => {
+    try {
+      const remembered = JSON.parse(localStorage.getItem('orbitx_remembered_users') || '[]') as any[];
+      const cleaned = remembered.map(({ accessCode, access_code, ...rest }: any) => rest);
+      localStorage.setItem('orbitx_remembered_users', JSON.stringify(cleaned));
+      setRememberedUsers(cleaned);
+    } catch {}
+    try {
+      const stored = localStorage.getItem('hub_user');
+      if (stored) {
+        const parsed = JSON.parse(stored) as any;
+        if (parsed.accessCode || parsed.access_code) {
+          const { accessCode, access_code, ...rest } = parsed;
+          localStorage.setItem('hub_user', JSON.stringify(rest));
+        }
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
     const storedUser = localStorage.getItem('hub_user');
     const storedToken = localStorage.getItem('hub_token');
     if (storedUser) {
       if (storedToken) {
         try {
-          setCurrentUser(JSON.parse(storedUser));
+          const parsed = JSON.parse(storedUser) as any;
+          const { accessCode, access_code, ...safeUser } = parsed;
+          setCurrentUser(safeUser);
         } catch (e) {
           console.error('Failed to parse hub_user, clearing session');
           localStorage.removeItem('hub_user');

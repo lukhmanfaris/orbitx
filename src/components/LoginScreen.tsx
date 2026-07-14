@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { motion } from 'motion/react';
 import { Lock, AlertCircle, ChevronRight, X } from 'lucide-react';
 import { useAppContext } from '../AppContext';
@@ -12,6 +12,8 @@ export default function LoginScreen() {
     removeRememberedUser,
     setIsOnboardingOpen,
   } = useAppContext();
+
+  const codeInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 bg-neutral-50 min-h-[85vh]">
@@ -41,6 +43,7 @@ export default function LoginScreen() {
             <div className="relative">
               <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
               <input
+                ref={codeInputRef}
                 type="text"
                 className={`w-full text-sm pl-10 pr-4 py-3 border rounded-xl focus:outline-none focus:bg-white transition-all uppercase font-mono placeholder:lowercase placeholder:font-sans ${
                   loginError
@@ -94,7 +97,7 @@ export default function LoginScreen() {
                 >
                   <button
                     type="button"
-                    onClick={() => handleCodeLogin(user.accessCode)}
+                    onClick={() => { setAccessCodeInput(''); codeInputRef.current?.focus(); }}
                     className="flex-1 flex items-center gap-2.5 min-w-0 text-left"
                   >
                     <div className="w-6 h-6 rounded-full bg-neutral-100 flex items-center justify-center flex-shrink-0">

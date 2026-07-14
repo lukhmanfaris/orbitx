@@ -16,13 +16,13 @@ export default function authRoutes(deps: RouteDeps): Router {
     const cleanCode = code.trim().toUpperCase();
     const { data, error } = await supabase.from('users').select('*').eq('access_code', cleanCode).single();
     if (error || !data) return res.status(401).json({ error: "Invalid Access Code. Check reference directory." });
-    const user = toCamel(data);
+    const { accessCode, ...safeUser } = toCamel(data) as any;
     const token = jwt.sign(
-      { id: user.id, username: user.username, role: user.role },
+      { id: safeUser.id, username: safeUser.username, role: safeUser.role },
       process.env.JWT_SECRET!,
       { expiresIn: '7d' }
     );
-    res.json({ user, token });
+    res.json({ user: safeUser, token });
   });
 
   return router;

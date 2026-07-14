@@ -125,12 +125,11 @@ function EditBrandModal({ isOpen, onClose, companyName, companyDescription, comp
   );
 }
 
-function ProfileModal({ isOpen, onClose, username, role, accessCode }: {
+function ProfileModal({ isOpen, onClose, username, role }: {
   isOpen: boolean;
   onClose: () => void;
   username: string;
   role: string;
-  accessCode: string;
 }) {
   return (
     <AnimatePresence>
@@ -161,10 +160,6 @@ function ProfileModal({ isOpen, onClose, username, role, accessCode }: {
               <div className="flex justify-between items-center py-2 border-b border-neutral-100">
                 <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Role</span>
                 <span className="text-sm font-medium text-neutral-900">{role}</span>
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-xs font-medium text-neutral-400 uppercase tracking-wider">Access Code</span>
-                <span className="text-sm font-mono font-medium text-neutral-900 bg-neutral-100 px-2 py-0.5 rounded">{accessCode}</span>
               </div>
             </div>
             <div className="flex justify-end mt-6">
@@ -609,7 +604,6 @@ export default function App() {
             onClose={() => setIsProfileOpen(false)}
             username={currentUser.username}
             role={currentUser.role}
-            accessCode={currentUser.accessCode}
           />
         )}
       </div>
