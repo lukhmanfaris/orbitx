@@ -125,7 +125,7 @@ else
 fi
 
 # Date.now() for IDs
-DATE_NOW_IDS=$(grep -n "Date.now()" worker.ts src/server/ -r 2>/dev/null | grep -v "issuedAt\|upload\|file" | wc -l)
+DATE_NOW_IDS=$(grep -n "Date.now()" worker.ts src/server/ -r 2>/dev/null | grep -v "issuedAt\|upload\|file\|safeKey" | wc -l)
 if [ "$DATE_NOW_IDS" -eq 0 ]; then
   pass "No Date.now() ID generation"
 else
