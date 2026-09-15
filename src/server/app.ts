@@ -12,8 +12,9 @@ import userRoutes from './routes/users.routes';
 export function createApp(): express.Express {
   const app = express();
   app.set('trust proxy', 1);
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ limit: '50mb', extended: true }));
+  // 5mb covers base64 company logos (client caps at 2MB); file uploads stream via PUT /api/upload
+  app.use(express.json({ limit: '5mb' }));
+  app.use(express.urlencoded({ limit: '5mb', extended: true }));
 
   const deps: RouteDeps = { supabase: getSupabase() };
 
@@ -28,6 +29,7 @@ export function createApp(): express.Express {
   app.use('/api', assetRoutes(deps));
   app.use('/api', articleRoutes(deps));
   app.use('/api', userRoutes(deps));
+  app.use('/api', (_req, res) => { res.status(404).json({ error: 'Not found' }); });
 
   return app;
 }
