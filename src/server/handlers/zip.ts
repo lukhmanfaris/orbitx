@@ -26,13 +26,14 @@ export async function handleZip(request: Request, env: Env, ctx: ExecutionContex
 
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
   const writer = writable.getWriter();
+  let pending: Promise<void> = Promise.resolve();
   const zip = new Zip((err, chunk, final) => {
     if (err) {
       writer.abort(err).catch(() => {});
       return;
     }
-    writer.write(chunk).catch(() => {});
-    if (final) writer.close().catch(() => {});
+    pending = pending.then(() => writer.write(chunk)).catch(() => {});
+    if (final) pending = pending.then(() => writer.close()).catch(() => {});
   });
 
   const pump = (async () => {
@@ -54,12 +55,14 @@ export async function handleZip(request: Request, env: Env, ctx: ExecutionContex
         const entry = new ZipPassThrough(name); // store-only: media is already compressed
         zip.add(entry);
         for await (const chunk of obj.body) {
+          await pending;
           await writer.ready;
           entry.push(chunk);
         }
         entry.push(new Uint8Array(0), true);
       }
       zip.end();
+      await pending;
     } catch (err) {
       console.error('ZIP stream failed:', err);
       zip.terminate();
