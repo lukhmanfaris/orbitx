@@ -106,11 +106,15 @@ export async function apiDelete<T>(url: string, body?: unknown): Promise<T> {
   return parseJSON(res);
 }
 
-export async function apiUpload(url: string, formData: FormData): Promise<any> {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: authHeaders(),
-    body: formData,
+export async function apiUploadFile(file: File): Promise<{ publicUrl: string; fileType: string }> {
+  const res = await fetch('/api/upload', {
+    method: 'PUT',
+    headers: {
+      ...authHeaders(),
+      'Content-Type': file.type || 'application/octet-stream',
+      'X-File-Name': encodeURIComponent(file.name),
+    },
+    body: file,
   });
   if (handleAuthFailure(res)) {
     const errBody = await res.json().catch(() => ({}));
@@ -118,4 +122,25 @@ export async function apiUpload(url: string, formData: FormData): Promise<any> {
   }
   if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => ({})));
   return parseJSON(res);
+}
+
+/** Authenticated download → triggers browser save. Used for single asset and zip. */
+export async function apiDownload(url: string, filename: string, init?: { method?: 'GET' | 'POST'; body?: unknown }): Promise<void> {
+  const res = await fetch(url, {
+    method: init?.method ?? 'GET',
+    headers: init?.body ? { 'Content-Type': 'application/json', ...authHeaders() } : authHeaders(),
+    body: init?.body ? JSON.stringify(init.body) : undefined,
+  });
+  if (handleAuthFailure(res)) {
+    const errBody = await res.json().catch(() => ({}));
+    throw new ApiError(401, errBody);
+  }
+  if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => ({})));
+  const blob = await res.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = objectUrl;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(objectUrl);
 }

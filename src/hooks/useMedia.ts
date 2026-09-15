@@ -3,7 +3,7 @@ import { Role, AssetStatus, Asset, User } from '../types';
 
 export type EnrichedAsset = Asset & { postingName?: string; campaignId?: string };
 import { ToastType } from './useToast';
-import { apiGet, apiPost, apiPut, apiDelete, parseJSON, apiUpload } from '../utils/api';
+import { apiGet, apiPost, apiPut, apiDelete, parseJSON, apiUploadFile, apiDownload } from '../utils/api';
 
 export interface UseMediaParams {
   currentUser: User | null;
@@ -132,9 +132,7 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
     }
     setIsUploading(true); setUploadError(''); setUploadingFileName(file.name); setUploadProgress(15);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const { publicUrl, fileType } = await apiUpload('/api/upload', formData);
+      const { publicUrl, fileType } = await apiUploadFile(file);
       setUploadProgress(45);
       setUploadProgress(80);
       const dateToday = new Date().toLocaleDateString('en-CA');
@@ -154,9 +152,7 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
       return;
     }
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const { publicUrl, fileType } = await apiUpload('/api/upload', formData);
+      const { publicUrl, fileType } = await apiUploadFile(file);
       const dateToday = new Date().toLocaleDateString('en-CA');
       const newAsset = await apiPost<Asset>('/api/assets', {
         postingFolderId: originalAsset.postingFolderId,
@@ -202,20 +198,7 @@ export function useMedia({ currentUser, selectedPostingId, addToast }: UseMediaP
     if (assetIds.length === 0) return;
     setIsDownloadingZip(true);
     try {
-      const token = localStorage.getItem('hub_token');
-      const res = await fetch('/api/assets/download-zip', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ assetIds }),
-      });
-      if (!res.ok) throw new Error('Download failed');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'assets.zip';
-      a.click();
-      URL.revokeObjectURL(url);
+      await apiDownload('/api/assets/download-zip', 'assets.zip', { method: 'POST', body: { assetIds } });
     } catch (err: any) { addToast?.('error', 'Download Failed', err.message || 'Failed to download ZIP.'); }
     finally { setIsDownloadingZip(false); }
   };

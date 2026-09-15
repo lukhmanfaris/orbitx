@@ -3,7 +3,7 @@ import { ArrowLeft, Save, Image, X, Bold, Italic, Underline, Heading1, Heading2,
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { useAppContext } from '../AppContext';
-import { parseJSON, apiUpload } from '../utils/api';
+import { parseJSON, apiUploadFile } from '../utils/api';
 
 marked.setOptions({ breaks: true, gfm: true });
 
@@ -65,9 +65,7 @@ export default function FullArticleTab() {
     if (!file.type.startsWith('image/')) return;
     setUploadingCover(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const { publicUrl } = await apiUpload('/api/upload', formData);
+      const { publicUrl } = await apiUploadFile(file);
       setArticleCoverImage(publicUrl);
     } catch (err) {
       console.error('Cover image upload failed:', err);
