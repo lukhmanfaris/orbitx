@@ -33,7 +33,11 @@ export default {
       if (request.method === 'PUT' && url.pathname === '/api/upload') return handleUpload(request, env);
       if (request.method === 'POST' && url.pathname === '/api/assets/download-zip') return handleZip(request, env, ctx);
       const dl = request.method === 'GET' ? url.pathname.match(DOWNLOAD_RE) : null;
-      if (dl) return handleDownload(request, env, decodeURIComponent(dl[1]));
+      if (dl) {
+        let id: string;
+        try { id = decodeURIComponent(dl[1]); } catch { return json({ error: 'Invalid asset id' }, 400); }
+        return handleDownload(request, env, id);
+      }
     }
 
     return expressHandler.fetch!(request, env, ctx);
