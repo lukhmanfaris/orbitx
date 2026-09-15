@@ -14,5 +14,5 @@ export function safeKey(originalName: string, now: number = Date.now()): string 
 }
 
 export function filenameFromKey(key: string): string {
-  return key.split('/').pop() || 'download';
+  return (key.split('/').pop() || 'download').replace(/[^\w.-]/g, '_');
 }

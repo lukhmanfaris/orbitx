@@ -12,7 +12,8 @@ export async function handleDownload(request: Request, env: Env, assetId: string
     .select('s3_file_url')
     .eq('id', assetId)
     .single();
-  if (error || !asset) return json({ error: 'Asset not found' }, 404);
+  if (error && error.code !== 'PGRST116') return json({ error: error.message }, 500);
+  if (!asset) return json({ error: 'Asset not found' }, 404);
 
   const key = keyFromUrl(asset.s3_file_url, env.R2_PUBLIC_URL);
   if (!key) return json({ error: 'Asset is not a downloadable file' }, 400);

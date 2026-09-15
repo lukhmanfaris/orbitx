@@ -8,11 +8,12 @@ export async function handleZip(request: Request, env: Env, ctx: ExecutionContex
   const auth = requireAuth(request, env.JWT_SECRET);
   if (auth instanceof Response) return auth;
 
-  const body = (await request.json().catch(() => ({}))) as { assetIds?: unknown };
-  const assetIds = body.assetIds;
+  const body = (await request.json().catch(() => null)) as { assetIds?: unknown } | null;
+  const assetIds = body?.assetIds;
   if (!Array.isArray(assetIds) || assetIds.length === 0 || !assetIds.every(id => typeof id === 'string')) {
     return json({ error: 'At least one asset ID required' }, 400);
   }
+  if (assetIds.length > 200) return json({ error: 'Too many assets (max 200)' }, 400);
 
   const { data: assets, error } = await getSupabase()
     .from('assets')
@@ -21,7 +22,7 @@ export async function handleZip(request: Request, env: Env, ctx: ExecutionContex
   if (error) return json({ error: error.message }, 500);
   if (!assets || assets.length === 0) return json({ error: 'No assets found' }, 404);
 
-  const downloadable = assets.filter((a: any) => a.file_type !== 'video/embed');
+  const downloadable = assets.filter(a => a.file_type !== 'video/embed');
   if (downloadable.length === 0) return json({ error: 'No downloadable assets' }, 400);
 
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
@@ -54,7 +55,7 @@ export async function handleZip(request: Request, env: Env, ctx: ExecutionContex
 
         const entry = new ZipPassThrough(name); // store-only: media is already compressed
         zip.add(entry);
-        for await (const chunk of obj.body) {
+        for await (const chunk of obj.body as ReadableStream<Uint8Array>) {
           await pending;
           await writer.ready;
           entry.push(chunk);

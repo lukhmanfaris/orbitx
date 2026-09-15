@@ -13,13 +13,14 @@ export async function handleUpload(request: Request, env: Env): Promise<Response
   if (!request.body || !length) return json({ error: 'No file provided' }, 400);
   if (length > MAX_UPLOAD_BYTES) return json({ error: 'File too large (max 100MB)' }, 413);
 
-  let rawName: string;
+  let decoded: string;
   try {
-    rawName = decodeURIComponent(request.headers.get('x-file-name') ?? 'file');
+    decoded = decodeURIComponent(request.headers.get('x-file-name') ?? 'file');
   } catch (err) {
     if (err instanceof URIError) return json({ error: 'Invalid X-File-Name header' }, 400);
     throw err;
   }
+  const rawName = decoded.slice(0, 200);
   const contentType = request.headers.get('content-type') || 'application/octet-stream';
   const key = safeKey(rawName);
 

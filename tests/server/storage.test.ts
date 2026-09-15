@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { keyFromUrl, safeKey } from '../../src/server/storage';
+import { filenameFromKey, keyFromUrl, safeKey } from '../../src/server/storage';
 
 describe('keyFromUrl', () => {
   it('strips public prefix', () => {
@@ -10,6 +10,15 @@ describe('keyFromUrl', () => {
   });
   it('returns null for foreign URLs', () => {
     expect(keyFromUrl('https://youtube.com/x', 'https://pub.r2.dev')).toBeNull();
+  });
+});
+
+describe('filenameFromKey', () => {
+  it('returns the last path segment', () => {
+    expect(filenameFromKey('uploads/x.png')).toBe('x.png');
+  });
+  it('sanitizes characters unsafe for Content-Disposition', () => {
+    expect(filenameFromKey('uploads/a "b".jpg')).toBe('a__b_.jpg');
   });
 });
 
