@@ -2,6 +2,8 @@
 
 **Commit:** `c66aa53` | **Date:** 2026-07-14
 
+> **Historical.** Written for the Express/Node host. Since the Cloudflare Workers migration (2026-09-16), download and ZIP live in `src/server/handlers/download.ts` and `src/server/handlers/zip.ts` (fflate, store-only); `archiver` is no longer a dependency. File storage is R2.
+
 ---
 
 ## Feature 1: Embed Video URL in Upload Section
