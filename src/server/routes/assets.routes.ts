@@ -1,21 +1,16 @@
 import { Router } from 'express';
-import path from 'path';
-import fs from 'fs';
-import { PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
-import { ZipArchive } from 'archiver';
-import { Readable } from 'stream';
-import { finished } from 'stream/promises';
+import { env } from 'cloudflare:workers';
 import { RouteDeps } from '../types';
 import { toCamel, toSnakeCase } from '../utils';
 import { assetId } from '../ids';
+import { keyFromUrl } from '../storage';
 import { AssetStatus } from '../../types';
 import * as v from '../middleware/validators';
 import { handleValidation } from '../middleware/validate';
-import { uploadLimiter } from '../middleware/rateLimiter';
 
 export default function assetRoutes(deps: RouteDeps): Router {
   const router = Router();
-  const { supabase, r2, upload: uploadMiddleware } = deps;
+  const { supabase } = deps;
 
   router.get('/postings/:postingId/assets', async (req, res) => {
     const { postingId } = req.params;
@@ -148,132 +143,20 @@ export default function assetRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data));
   });
 
-  router.get('/assets/:id/download', async (req, res) => {
-    const { id } = req.params;
-    const { data: asset, error } = await supabase.from('assets').select('*').eq('id', id).single();
-    if (error || !asset) return res.status(404).json({ error: 'Asset not found' });
-
-    const url = asset.s3_file_url;
-    if (url.startsWith('/uploads/')) {
-      const filePath = path.join(deps.uploadsDir, url.replace('/uploads/', ''));
-      return res.download(filePath);
-    }
-
-    const r2PublicUrl = process.env.R2_PUBLIC_URL || '';
-    const key = url.replace(`${r2PublicUrl}/`, '');
-    try {
-      const obj = await r2.send(new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: key }));
-      const filename = key.split('/').pop() || 'download';
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      if (obj.ContentType) res.setHeader('Content-Type', obj.ContentType);
-      if (obj.ContentLength) res.setHeader('Content-Length', String(obj.ContentLength));
-      (obj.Body as Readable).pipe(res);
-    } catch (err: any) {
-      console.error('Download failed:', err);
-      res.status(500).json({ error: 'Failed to download file' });
-    }
-  });
-
-  router.post('/assets/download-zip', async (req, res) => {
-    const { assetIds } = req.body;
-    if (!Array.isArray(assetIds) || assetIds.length === 0) {
-      return res.status(400).json({ error: 'At least one asset ID required' });
-    }
-
-    const { data: assets, error } = await supabase.from('assets').select('*').in('id', assetIds);
-    if (error) return res.status(500).json({ error: error.message });
-    if (!assets || assets.length === 0) return res.status(404).json({ error: 'No assets found' });
-
-    const downloadable = assets.filter((a: any) => a.file_type !== 'video/embed');
-    if (downloadable.length === 0) return res.status(400).json({ error: 'No downloadable assets' });
-
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', 'attachment; filename="assets.zip"');
-
-    const archive = new ZipArchive({ zlib: { level: 5 } });
-    archive.on('error', (err: Error) => {
-      console.error('ZIP archive error:', err);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Failed to create ZIP archive' });
-      } else if (!res.writableEnded) {
-        res.destroy(err);
-      }
-    });
-    archive.pipe(res);
-
-    const r2PublicUrl = process.env.R2_PUBLIC_URL || '';
-    for (const asset of downloadable) {
-      const url = asset.s3_file_url;
-      try {
-        if (url.startsWith('/uploads/')) {
-          const filePath = path.join(deps.uploadsDir, url.replace('/uploads/', ''));
-          archive.file(filePath, { name: path.basename(filePath) });
-        } else {
-          const key = url.replace(`${r2PublicUrl}/`, '');
-          const obj = await r2.send(new GetObjectCommand({ Bucket: process.env.R2_BUCKET_NAME!, Key: key }));
-          const filename = key.split('/').pop() || 'file';
-          archive.append(obj.Body as Readable, { name: filename });
-        }
-      } catch (err) {
-        console.error(`Failed to add asset ${asset.id} to zip:`, err);
-      }
-    }
-
-    try {
-      await archive.finalize();
-      await finished(res);
-    } catch (err) {
-      console.error('ZIP download failed:', err);
-      if (!res.headersSent) {
-        res.status(500).json({ error: 'Failed to create ZIP archive' });
-      } else if (!res.writableEnded) {
-        res.destroy(err instanceof Error ? err : undefined);
-      }
-    }
-  });
-
   router.delete('/assets/:id', async (req, res) => {
     const { id } = req.params;
     const { data: asset, error: fError } = await supabase.from('assets').select('s3_file_url').eq('id', id).single();
     if (fError || !asset) return res.status(404).json({ error: "Asset not found" });
 
-    const s3FileUrl = asset.s3_file_url;
-    if (s3FileUrl && s3FileUrl.startsWith("/uploads/")) {
-      const fileKey = s3FileUrl.replace("/uploads/", "");
-      const filePath = path.join(deps.uploadsDir, fileKey);
-      if (fs.existsSync(filePath)) {
-        try { fs.unlinkSync(filePath); console.log(`Cleaned up physical file: ${fileKey}`); }
-        catch (err) { console.error(`Failed to delete physical file: ${filePath}`, err); }
-      }
+    const key = keyFromUrl(asset.s3_file_url || '', env.R2_PUBLIC_URL);
+    if (key) {
+      try { await env.R2_BUCKET.delete(key); console.log(`Deleted R2 object: ${key}`); }
+      catch (err) { console.error(`Failed to delete R2 object: ${key}`, err); }
     }
 
     const { error } = await supabase.from('assets').delete().eq('id', id);
     if (error) return res.status(500).json({ error: error.message });
     res.json({ message: "Asset successfully deleted from registry" });
-  });
-
-  router.post('/upload', uploadLimiter, uploadMiddleware.single('file'), async (req, res) => {
-    try {
-      if (!req.file) {
-        res.status(400).json({ error: "No file provided" });
-        return;
-      }
-
-      const key = `uploads/${Date.now()}_${req.file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-
-      await r2.send(new PutObjectCommand({
-        Bucket: process.env.R2_BUCKET_NAME!,
-        Key: key,
-        Body: req.file.buffer,
-        ContentType: req.file.mimetype,
-      }));
-
-      const publicUrl = `${process.env.R2_PUBLIC_URL}/${key}`;
-      res.json({ publicUrl, fileType: req.file.mimetype });
-    } catch (err: any) {
-      console.error("Failed to upload to R2", err);
-      res.status(500).json({ error: "Failed to upload file" });
-    }
   });
 
   return router;

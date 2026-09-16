@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Role, Company, Campaign, PostingFolder, User } from '../types';
 import { ToastType } from './useToast';
-import { apiGet, apiPost, apiPut, apiDelete, parseJSON, apiUpload } from '../utils/api';
+import { apiGet, apiPost, apiPut, apiDelete, parseJSON, apiUploadFile } from '../utils/api';
 
 export interface UseWorkspaceParams {
   currentUser: User | null;
@@ -154,9 +154,7 @@ export function useWorkspace({ currentUser, addToast }: UseWorkspaceParams): Use
     const file = event.target.files?.[0];
     if (!file) return;
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const { publicUrl } = await apiUpload('/api/upload', formData);
+      const { publicUrl } = await apiUploadFile(file);
       const updated = await apiPut<Company>(`/api/companies/${companyId}`, { logoUrl: publicUrl });
       setAvailableCompanies(prev => prev.map(c => c.id === companyId ? updated : c));
       if (currentCompany && currentCompany.id === companyId) { setCurrentCompany(updated); }

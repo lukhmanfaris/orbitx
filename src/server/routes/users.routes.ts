@@ -5,7 +5,6 @@ import { userId as generateUserId } from '../ids';
 import { User } from '../../types';
 import * as v from '../middleware/validators';
 import { handleValidation } from '../middleware/validate';
-import { loginLimiter } from '../middleware/rateLimiter';
 
 const stripAccessCode = ({ accessCode, ...rest }: any) => rest;
 
@@ -25,7 +24,7 @@ export default function userRoutes(deps: RouteDeps): Router {
     res.json(toCamel(data).map(stripAccessCode));
   });
 
-  router.post('/users', loginLimiter, v.createUser, handleValidation, async (req, res) => {
+  router.post('/users', v.createUser, handleValidation, async (req, res) => {
     const { username, role, accessCode, password } = req.body;
     if (!username?.trim() || !role || !accessCode?.trim()) {
       return res.status(400).json({ error: "Username, designated position, and access code are required." });

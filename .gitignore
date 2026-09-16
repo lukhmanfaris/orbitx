@@ -10,3 +10,5 @@ uploads/
 db.json
 OrbitX-final.zip
 .superpowers/
+.dev.vars
+.wrangler/

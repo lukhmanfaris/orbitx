@@ -5,7 +5,7 @@ import { AssetStatus, Asset, Role } from '../types';
 import StatusBadge from './common/StatusBadge';
 import ImageLightbox from './common/ImageLightbox';
 import { useAppContext } from '../AppContext';
-import { parseJSON, apiUpload } from '../utils/api';
+import { parseJSON, apiUploadFile, apiDownload } from '../utils/api';
 
 interface AssetCardProps {
   key?: React.Key;
@@ -37,7 +37,7 @@ function AssetCard({ asset, isEditing }: AssetCardProps) {
 
   const isEmbed = asset.fileType === 'video/embed' || /youtube\.com|youtu\.be|vimeo\.com/.test(asset.s3FileUrl);
   const isVideo = !isEmbed && (asset.fileType?.startsWith('video') || asset.s3FileUrl.endsWith('.mp4') || asset.s3FileUrl.endsWith('.mov'));
-  const hasImage = asset.s3FileUrl.startsWith('https://') || asset.s3FileUrl.startsWith('/uploads/');
+  const hasImage = asset.s3FileUrl.startsWith('https://');
 
   const getEmbedUrl = (url: string): string => {
     const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]+)/);
@@ -109,9 +109,7 @@ function AssetCard({ asset, isEditing }: AssetCardProps) {
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const { publicUrl } = await apiUpload('/api/upload', formData);
+      const { publicUrl } = await apiUploadFile(file);
       await saveAssetField(asset.id, { s3FileUrl: publicUrl });
       setLightboxOpen(false);
     } catch (err) { console.error('Failed to replace asset media:', err); }
@@ -299,7 +297,7 @@ function AssetCard({ asset, isEditing }: AssetCardProps) {
               {!isEmbed && (
               <button
                 type="button"
-                onClick={() => window.open(`/api/assets/${asset.id}/download`, '_blank')}
+                onClick={() => apiDownload(`/api/assets/${asset.id}/download`, asset.s3FileUrl.split('/').pop() || 'download').catch(err => console.error('Download failed:', err))}
                 className="text-[11px] text-neutral-400 hover:text-neutral-900 border border-neutral-100 rounded-lg px-2 py-1 hover:bg-neutral-50 transition-colors flex items-center gap-1"
                 title="Download file"
               >

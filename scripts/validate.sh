@@ -27,29 +27,31 @@ if npx tsc --noEmit 2>/dev/null; then
 else
   fail "tsc --noEmit: has errors"
 fi
+if npx vitest run >/dev/null 2>&1; then pass "vitest passing"; else fail "vitest failing"; fi
 
 # ── 2. Build ──
 echo ""
 echo "── Build ──"
 if npm run build 2>/dev/null; then
-  if [ ! -f "dist/server.cjs" ]; then
-    fail "dist/server.cjs missing"
-  fi
+  [ -f "dist/index.html" ] || fail "dist/index.html missing"
   BUNDLE_SIZE=$(du -sh dist/ 2>/dev/null | cut -f1)
   pass "Bundle size: $BUNDLE_SIZE"
 else
   fail "npm run build: failed"
 fi
 
+if npx tsc --noEmit -p tsconfig.worker.json 2>/dev/null; then pass "worker typecheck clean"; else fail "worker typecheck has errors"; fi
+if npx wrangler deploy --dry-run --outdir /tmp/orbitx-dry >/dev/null 2>&1; then pass "wrangler dry-run bundle ok"; else fail "wrangler dry-run failed"; fi
+
 # ── 3. Security checks ──
 echo ""
 echo "── Security ──"
 
 # Auth middleware
-if grep -q "authMiddleware" server.ts 2>/dev/null; then
-  pass "Auth middleware applied in server.ts"
+if grep -q "authMiddleware" src/server/app.ts 2>/dev/null; then
+  pass "Auth middleware applied in app.ts"
 else
-  fail "Auth middleware NOT found in server.ts"
+  fail "Auth middleware NOT found in app.ts"
 fi
 
 # JWT (not base64)
@@ -75,10 +77,10 @@ else
 fi
 
 # Rate limiting
-if grep -rq "rateLimit\|rateLimiter" src/server/ server.ts 2>/dev/null; then
-  pass "Rate limiting configured"
+if grep -q '"ratelimits"' wrangler.jsonc && grep -q "_LIMITER.limit" worker.ts 2>/dev/null; then
+  pass "Rate limiting bindings configured"
 else
-  fail "Rate limiting NOT found"
+  fail "Rate limiting bindings NOT found"
 fi
 
 # Input validation
@@ -99,18 +101,16 @@ else
   fail ".env.example missing"
 fi
 
-if [ -f ".env" ]; then
-  REQUIRED_VARS="SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY R2_ACCOUNT_ID R2_ACCESS_KEY_ID R2_SECRET_ACCESS_KEY R2_BUCKET_NAME R2_PUBLIC_URL ONBOARD_PASSWORD JWT_SECRET"
-  for var in $REQUIRED_VARS; do
-    if grep -q "^${var}=.\+" .env 2>/dev/null; then
-      pass "$var is set"
-    else
-      fail "$var is missing or empty in .env"
-    fi
+if [ -f ".dev.vars" ]; then
+  for var in SUPABASE_SERVICE_ROLE_KEY ONBOARD_PASSWORD JWT_SECRET; do
+    if grep -q "^${var}=.\+" .dev.vars 2>/dev/null; then pass "$var set in .dev.vars"; else fail "$var missing in .dev.vars"; fi
   done
 else
-  warn ".env file not found (ok if env vars are set externally)"
+  warn ".dev.vars not found (ok if secrets are set via wrangler secret put)"
 fi
+for var in R2_PUBLIC_URL SUPABASE_URL; do
+  if grep -q "\"$var\": *\"http" wrangler.jsonc 2>/dev/null; then pass "$var set in wrangler.jsonc"; else fail "$var missing in wrangler.jsonc vars"; fi
+done
 
 # ── 5. Code quality ──
 echo ""
@@ -125,7 +125,7 @@ else
 fi
 
 # Date.now() for IDs
-DATE_NOW_IDS=$(grep -n "Date.now()" server.ts src/server/ -r 2>/dev/null | grep -v "issuedAt\|upload\|file" | wc -l)
+DATE_NOW_IDS=$(grep -n "Date.now()" worker.ts src/server/ -r 2>/dev/null | grep -v "issuedAt\|upload\|file\|safeKey" | wc -l)
 if [ "$DATE_NOW_IDS" -eq 0 ]; then
   pass "No Date.now() ID generation"
 else
@@ -147,11 +147,11 @@ else
   warn "Only $ROUTE_COUNT routes in modules (expected 30+)"
 fi
 
-SERVER_LINES=$(wc -l < server.ts 2>/dev/null)
+SERVER_LINES=$(wc -l < worker.ts 2>/dev/null)
 if [ "$SERVER_LINES" -lt 120 ]; then
-  pass "server.ts is lean: $SERVER_LINES lines"
+  pass "worker.ts is lean: $SERVER_LINES lines"
 else
-  warn "server.ts is $SERVER_LINES lines (target: <120)"
+  warn "worker.ts is $SERVER_LINES lines (target: <120)"
 fi
 
 # ── 6. Git status ──
